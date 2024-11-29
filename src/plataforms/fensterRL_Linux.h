@@ -4,8 +4,6 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/XKBlib.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 typedef struct {
@@ -16,14 +14,17 @@ typedef struct {
     Atom wm_delete_window;
 } PlatformData;
 
-static double PlatformGetTime(void) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec + tv.tv_usec / 1000000.0;
+static void PlatformSleep(long microseconds) {
+    struct timespec ts;
+    ts.tv_sec = microseconds / 1000000;
+    ts.tv_nsec = (microseconds % 1000000) * 1000;
+    nanosleep(&ts, NULL);
 }
 
-static void PlatformSleep(long microseconds) {
-    usleep(microseconds);
+static double PlatformGetTime(void) {
+    struct timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return time.tv_sec + time.tv_nsec / 1000000000.0;
 }
 
 static void PlatformInitWindow(const char* title) {
@@ -49,7 +50,10 @@ static void PlatformInitWindow(const char* title) {
     platform->wm_delete_window = XInternAtom(platform->display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(platform->display, platform->window, &platform->wm_delete_window, 1);
     
-    XSelectInput(platform->display, platform->window, ExposureMask | KeyPressMask | StructureNotifyMask);
+    XSelectInput(platform->display, platform->window, 
+        ExposureMask | KeyPressMask | StructureNotifyMask | 
+        (fenster.isResizable ? 0 : ResizeRedirectMask)
+    );
     
     platform->gc = XCreateGC(platform->display, platform->window, 0, NULL);
     
@@ -73,9 +77,41 @@ static bool PlatformWindowShouldClose(void) {
     
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
+        
         if (event.type == ClientMessage) {
-            if (event.xclient.data.l[0] == platform->wm_delete_window) {
+            if (event.xclient.data.l[0] == (long)platform->wm_delete_window) {
                 return true;
+            }
+        }
+        
+        if (fenster.isResizable && event.type == ConfigureNotify) {
+            int newWidth = event.xconfigure.width;
+            int newHeight = event.xconfigure.height;
+            
+            // If window size changed
+            if (newWidth != fenster.width || newHeight != fenster.height) {
+                // Realloc buffer
+                uint32_t* newBuffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
+                if (newBuffer) {
+                    fenster.buffer = newBuffer;
+                    
+                    // Update platform image
+                    platform->image->data = NULL;  // Prevent XDestroyImage from freeing our buffer
+                    XDestroyImage(platform->image);
+                    
+                    // Recreate XImage with new dimensions and buffer
+                    platform->image = XCreateImage(
+                        platform->display,
+                        DefaultVisual(platform->display, DefaultScreen(platform->display)),
+                        DefaultDepth(platform->display, DefaultScreen(platform->display)),
+                        ZPixmap, 0, (char*)fenster.buffer,
+                        newWidth, newHeight, 32, 0
+                    );
+                    
+                    // Update fenster dimensions
+                    fenster.width = newWidth;
+                    fenster.height = newHeight;
+                }
             }
         }
     }

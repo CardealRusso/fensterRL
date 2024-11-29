@@ -6,12 +6,15 @@
 #include <time.h>
 #include <stdlib.h>
 
+#define FLAG_WINDOW_RESIZABLE (1 << 0)
+
 static struct {
   int width;
   int height;
   uint32_t* buffer;
   int targetFPS;
   double lastFrameTime;
+  bool isResizable;
   void* platformData;
 } fenster = {0};
 
@@ -22,6 +25,10 @@ static struct {
 #elif defined(__APPLE__)
   #include "plataforms/fensterRL_Mac.h"
 #endif
+
+void rl_SetConfigFlags(int flags) {
+  fenster.isResizable = !!(flags & FLAG_WINDOW_RESIZABLE);
+}
 
 void rl_InitWindow(int width, int height, const char* title) {
   fenster.width = width;
@@ -69,6 +76,14 @@ void rl_CloseWindow(void) {
   PlatformCloseWindow();
   free(fenster.buffer);
   fenster.buffer = NULL;
+}
+
+int rl_GetWindowWidth(void) {
+  return fenster.width;
+}
+
+int rl_GetWindowHeight(void) {
+  return fenster.height;
 }
 
 #endif // FENSTERRL_H

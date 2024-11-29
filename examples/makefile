@@ -1,4 +1,4 @@
-CFLAGS ?= -O3 -flto -s -Wall -Wextra -std=c99
+CFLAGS ?= -O3 -flto -s -Wall -Wextra -std=gnu99
 
 ifeq ($(OS),Windows_NT)
 	CC = gcc

@@ -1,7 +1,5 @@
-// fensterRL_Windows.h
 #ifndef FENSTERRL_WINDOWS_H
 #define FENSTERRL_WINDOWS_H
-
 #include <windows.h>
 
 typedef struct {
@@ -24,16 +22,47 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            PlatformData* platform = (PlatformData*)fenster.platformData;
             
-            // Copy from memory DC to window DC
-            BitBlt(hdc, 0, 0, fenster.width, fenster.height, 
-                   platform->memoryDC, 0, 0, SRCCOPY);
+            BITMAPINFO bi = {0};
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = fenster.width;
+            bi.bmiHeader.biHeight = -fenster.height;
+            bi.bmiHeader.biPlanes = 1;
+            bi.bmiHeader.biBitCount = 32;
+            bi.bmiHeader.biCompression = BI_RGB;
+            
+            StretchDIBits(
+                hdc, 
+                0, 0, 
+                fenster.width, fenster.height, 
+                0, 0, 
+                fenster.width, fenster.height, 
+                fenster.buffer, 
+                &bi, 
+                DIB_RGB_COLORS, 
+                SRCCOPY
+            );
             
             EndPaint(hwnd, &ps);
             return 0;
         }
+        
+        case WM_SIZE: {
+            if (!fenster.isResizable) return 0;
             
+            int newWidth = LOWORD(lParam);
+            int newHeight = HIWORD(lParam);
+            
+            if (newWidth > 0 && newHeight > 0) {
+                fenster.buffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
+                fenster.width = newWidth;
+                fenster.height = newHeight;
+                
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            return 0;
+        }
+        
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -43,68 +72,48 @@ static double PlatformGetTime(void) {
     LARGE_INTEGER freq, count;
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&count);
-    return count.QuadPart * 1000.0 / freq.QuadPart / 1000.0; // Convert to seconds
+    return count.QuadPart * 1000.0 / freq.QuadPart / 1000.0;
 }
 
 static void PlatformSleep(long microseconds) {
-    Sleep(microseconds / 1000); // Convert to milliseconds
+    Sleep(microseconds / 1000);
 }
 
 static void PlatformInitWindow(const char* title) {
-    PlatformData* platform = malloc(sizeof(PlatformData));
-    fenster.platformData = platform;
+    fenster.buffer = malloc(fenster.width * fenster.height * sizeof(uint32_t));
     
-    // Register window class
+    HINSTANCE hInstance = GetModuleHandle(NULL);
     WNDCLASSEX wc = {0};
     wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = CS_VREDRAW | CS_HREDRAW;
     wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
+    wc.hInstance = hInstance;
     wc.lpszClassName = "FensterRLClass";
-    wc.style = CS_HREDRAW | CS_VREDRAW;
     
     RegisterClassEx(&wc);
-    
-    // Create window with correct client area
-    RECT rect = {0, 0, fenster.width, fenster.height};
-    AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, FALSE, WS_EX_CLIENTEDGE);
-    
+
+    PlatformData* platform = malloc(sizeof(PlatformData));
+    fenster.platformData = platform;
+
+    DWORD windowStyle = fenster.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME);
+
     platform->hwnd = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
-        "FensterRLClass",
+        WS_EX_CLIENTEDGE, 
+        "FensterRLClass", 
         title,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        rect.right - rect.left, rect.bottom - rect.top,
-        NULL, NULL,
-        GetModuleHandle(NULL),
+        windowStyle, 
+        CW_USEDEFAULT, 
+        CW_USEDEFAULT, 
+        fenster.width, 
+        fenster.height, 
+        NULL, 
+        NULL, 
+        hInstance, 
         NULL
     );
-    
-    // Setup DIB section
-    HDC windowDC = GetDC(platform->hwnd);
-    platform->memoryDC = CreateCompatibleDC(windowDC);
-    
-    platform->bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    platform->bitmapInfo.bmiHeader.biWidth = fenster.width;
-    platform->bitmapInfo.bmiHeader.biHeight = -fenster.height; // Negative for top-down DIB
-    platform->bitmapInfo.bmiHeader.biPlanes = 1;
-    platform->bitmapInfo.bmiHeader.biBitCount = 32;
-    platform->bitmapInfo.bmiHeader.biCompression = BI_RGB;
-    
-    platform->bitmap = CreateDIBSection(
-        platform->memoryDC,
-        &platform->bitmapInfo,
-        DIB_RGB_COLORS,
-        (void**)&fenster.buffer,
-        NULL,
-        0
-    );
-    
-    SelectObject(platform->memoryDC, platform->bitmap);
-    ReleaseDC(platform->hwnd, windowDC);
-    
-    // Show window
-    ShowWindow(platform->hwnd, SW_NORMAL);
+
+    SetWindowLongPtr(platform->hwnd, GWLP_USERDATA, (LONG_PTR)&fenster);
+    ShowWindow(platform->hwnd, SW_SHOW);
     UpdateWindow(platform->hwnd);
 }
 
@@ -120,7 +129,6 @@ static bool PlatformWindowShouldClose(void) {
         DispatchMessage(&msg);
     }
     
-    // Update the window content
     InvalidateRect(platform->hwnd, NULL, FALSE);
     return false;
 }
@@ -134,7 +142,7 @@ static void PlatformCloseWindow(void) {
     
     free(platform);
     fenster.platformData = NULL;
-    fenster.buffer = NULL;  // Buffer was managed by DIB section
+    fenster.buffer = NULL;
 }
 
 #endif // FENSTERRL_WINDOWS_H
