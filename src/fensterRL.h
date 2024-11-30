@@ -86,4 +86,11 @@ int rl_GetWindowHeight(void) {
   return fenster.height;
 }
 
+int rl_GetScreenWidth(void) {
+  return PlatformGetScreenWidth();
+}
+
+int rl_GetScreenHeight(void) {
+  return PlatformGetScreenHeight();
+}
 #endif // FENSTERRL_H

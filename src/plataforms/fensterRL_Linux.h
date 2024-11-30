@@ -14,6 +14,18 @@ typedef struct {
     Atom wm_delete_window;
 } PlatformData;
 
+static int PlatformGetScreenWidth(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    int screen = DefaultScreen(platform->display);
+    return DisplayWidth(platform->display, screen);
+}
+
+static int PlatformGetScreenHeight(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    int screen = DefaultScreen(platform->display);
+    return DisplayHeight(platform->display, screen);
+}
+
 static void PlatformSleep(long microseconds) {
     struct timespec ts;
     ts.tv_sec = microseconds / 1000000;

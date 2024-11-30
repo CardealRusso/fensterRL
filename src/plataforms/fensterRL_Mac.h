@@ -214,4 +214,13 @@ static void PlatformCloseWindow(void) {
    fenster.platformData = NULL;
 }
 
+static int PlatformGetScreenWidth(void) {
+    CGDirectDisplayID display = CGMainDisplayID();
+    return CGDisplayPixelsWide(display);
+}
+
+static int PlatformGetScreenHeight(void) {
+    CGDirectDisplayID display = CGMainDisplayID();
+    return CGDisplayPixelsHigh(display);
+}
 #endif // FENSTERRL_MAC_H

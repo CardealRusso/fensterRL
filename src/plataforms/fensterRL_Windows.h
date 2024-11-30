@@ -145,4 +145,11 @@ static void PlatformCloseWindow(void) {
     fenster.buffer = NULL;
 }
 
+static int PlatformGetScreenWidth(void) {
+    return GetSystemMetrics(SM_CXSCREEN);
+}
+
+static int PlatformGetScreenHeight(void) {
+    return GetSystemMetrics(SM_CYSCREEN);
+}
 #endif // FENSTERRL_WINDOWS_H
