@@ -93,4 +93,8 @@ int rl_GetScreenWidth(void) {
 int rl_GetScreenHeight(void) {
   return PlatformGetScreenHeight();
 }
+
+bool rl_IsWindowFocused(void) {
+  return PlataformIsWindowFocused();
+}
 #endif // FENSTERRL_H

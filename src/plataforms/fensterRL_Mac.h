@@ -223,4 +223,9 @@ static int PlatformGetScreenHeight(void) {
     CGDirectDisplayID display = CGMainDisplayID();
     return CGDisplayPixelsHigh(display);
 }
+
+static bool PlataformIsWindowFocused(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    return msg(BOOL, platform->window, "isKeyWindow");
+}
 #endif // FENSTERRL_MAC_H

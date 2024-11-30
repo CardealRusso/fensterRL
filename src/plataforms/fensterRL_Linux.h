@@ -149,4 +149,14 @@ static void PlatformCloseWindow(void) {
     fenster.platformData = NULL;
 }
 
+static bool PlataformIsWindowFocused(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (!platform || !platform->display || !platform->window) return false;
+
+    Window focusedWindow;
+    int revertTo;
+    XGetInputFocus(platform->display, &focusedWindow, &revertTo);
+
+    return (focusedWindow == platform->window);
+}
 #endif // FENSTERRL_LINUX_H

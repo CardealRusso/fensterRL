@@ -152,4 +152,9 @@ static int PlatformGetScreenWidth(void) {
 static int PlatformGetScreenHeight(void) {
     return GetSystemMetrics(SM_CYSCREEN);
 }
+
+static bool PlataformIsWindowFocused(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    return GetForegroundWindow() == platform->hwnd;
+}
 #endif // FENSTERRL_WINDOWS_H
