@@ -19,15 +19,19 @@ int rl_GetScreenWidth(void);                                   // Get current mo
 int rl_GetScreenHeight(void);                                  // Get current monitor height
 
 // Drawing-related functions
-void rl_ClearBackground(uint32_t color);                        // Set background color (framebuffer clear color)
-void rl_SetPixel(int x, int y, uint32_t color);                 // Draw a pixel
-void rl_SetPixelUnsafe(int x, int y, uint32_t color);           // Draw a pixel (Faster and unsafe)
-uint32_t rl_GetPixel(int x, int y);                             // Get a pixel color (returns 0 if out of bounds)
-uint32_t rl_GetPixelUnsafe(int x, int y);                       // Get a pixel color (Faster and unsafe)
+void rl_ClearBackground(uint32_t color);                       // Set background color (framebuffer clear color)
+void rl_SetPixel(int x, int y, uint32_t color);                // Draw a pixel
+void rl_SetPixelUnsafe(int x, int y, uint32_t color);          // Draw a pixel (Faster and unsafe)
+uint32_t rl_GetPixel(int x, int y);                            // Get a pixel color (returns 0 if out of bounds)
+uint32_t rl_GetPixelUnsafe(int x, int y);                      // Get a pixel color (Faster and unsafe)
 
 // Timing-related functions
-void rl_WindowSync(int fps);                                    // The program will sleep to achieve this fps
+void rl_WindowSync(int fps);                                   // The program will sleep to achieve this fps
 
 // Misc. functions
-void rl_SetConfigFlags(int flags);                              // Setup init configuration flags (view FLAGS)
+void rl_SetConfigFlags(int flags);                             // Setup init configuration flags (view FLAGS)
+
+// Input-related functions: mouse
+int rl_GetMouseX(void);                                         // Get mouse position X
+int rl_GetMouseY(void);                                         // Get mouse position Y
 ```

@@ -12,7 +12,7 @@ int main(void) {
       break;
     }
 
-    printf("%d\n",rl_GetWindowPositionX());
+    printf("%d\n",rl_GetMouseX());
     rl_SetWindowTitle("test");
     for (int y = 0; y < rl_GetWindowHeight(); y++) {
       for (int x = 0; x < rl_GetWindowWidth(); x++) {

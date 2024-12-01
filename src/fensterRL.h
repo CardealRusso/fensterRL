@@ -17,6 +17,7 @@ static struct {
   void* platformData;
   int screenWidth, screenHeight;
   int windowPosX, windowPosY;
+  int mousePosition[2];
 } fenster = {0};
 
 #ifdef __linux__
@@ -145,5 +146,13 @@ int rl_GetWindowPositionX(void) {
 
 int rl_GetWindowPositionY(void) {
   return fenster.windowPosY;
+}
+
+int rl_GetMouseX(void) {
+  return fenster.mousePosition[0];
+}
+
+int rl_GetMouseY(void) {
+  return fenster.mousePosition[1];
 }
 #endif // FENSTERRL_H

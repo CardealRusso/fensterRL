@@ -7,11 +7,13 @@
 #include <objc/objc-runtime.h>
 #include <ApplicationServices/ApplicationServices.h>
 
-#define msg(r, o, s) ((r(*)(id, SEL))objc_msgSend)(o, sel_getUid(s))
-#define msg1(r, o, s, A, a) ((r(*)(id, SEL, A))objc_msgSend)(o, sel_getUid(s), a)
-#define msg2(r, o, s, A, a, B, b) ((r(*)(id, SEL, A, B))objc_msgSend)(o, sel_getUid(s), a, b)
-#define msg4(r, o, s, A, a, B, b, C, c, D, d) ((r(*)(id, SEL, A, B, C, D))objc_msgSend)(o, sel_getUid(s), a, b, c, d)
-#define cls(x) ((id)objc_getClass(x))
+// Simplified macro for Objective-C method calls with variable arguments
+#define OBJC_CALL(ret, obj, sel, ...) ((ret (*)(id, SEL, ...))objc_msgSend)(obj, sel_getUid(sel), ##__VA_ARGS__)
+
+#define OBJC_CALL_2(ret, obj, sel, arg1) ((ret (*)(id, SEL, id))objc_msgSend)(obj, sel_getUid(sel), arg1)
+#define OBJC_CALL_1(ret, obj, sel) ((ret (*)(id, SEL))objc_msgSend)(obj, sel_getUid(sel))
+#define OBJC_CALL_0(ret, obj, sel) ((ret (*)(id, SEL))objc_msgSend)(obj, sel_getUid(sel))
+#define CLS(x) ((id)objc_getClass(x))
 
 extern id const NSDefaultRunLoopMode;
 extern id const NSApp;
@@ -23,42 +25,53 @@ typedef struct {
     CGImageRef lastImage;
 } PlatformData;
 
-static void WindowDidResize(id self, SEL cmd, id notification) {
-    (void)cmd;
-    
+// Suppress unused parameter warnings by using __unused macro
+static BOOL WindowShouldClose(__unused id self, __unused SEL cmd, __unused id sender) {
+    fenster.hasCloseRequest = 1;
+    return NO;
+}
+
+static void WindowDidResize(__unused id self, __unused SEL cmd, id notification) {
     if (!fenster.isResizable) return;
 
-    CGRect frame = msg(CGRect, msg(id, notification, "object"), "frame");
-
-    fenster.hasResized = true;
+    CGRect frame;
+    frame = OBJC_CALL(CGRect, OBJC_CALL_1(id, notification, "object"), "frame");
+    
+    fenster.hasResized = 1;
     free(fenster.buffer);
     fenster.buffer = malloc(frame.size.width * frame.size.height * sizeof(uint32_t));
     fenster.width = frame.size.width;
     fenster.height = frame.size.height;
+    
     CGDirectDisplayID display = CGMainDisplayID();
     fenster.screenWidth = CGDisplayPixelsWide(display);
     fenster.screenHeight = CGDisplayPixelsHigh(display);
 }
 
-static void WindowDidMove(id self, SEL cmd, id notification) {
-    (void)cmd;
+static void WindowDidMove(__unused id self, __unused SEL cmd, __unused id notification) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
+    CGRect frame = OBJC_CALL(CGRect, platform->window, "frame");
     
-    CGRect frame = msg(CGRect, platform->window, "frame");
     fenster.windowPosX = frame.origin.x;
     fenster.windowPosY = frame.origin.y;
 }
 
-static void DrawRect(id self, SEL cmd, CGRect rect) {
-    (void)cmd;
-    (void)rect;
+static void WindowDidBecomeKey(__unused id self, __unused SEL cmd, __unused id notification) {
+    fenster.isFocused = 1;
+}
 
+static void WindowDidResignKey(__unused id self, __unused SEL cmd, __unused id notification) {
+    fenster.isFocused = 0;
+}
+
+static void DrawRect(__unused id self, __unused SEL cmd, __unused CGRect rect) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
 
     if (platform->lastImage) {
-        CGContextRef context = msg(CGContextRef,
-            msg(id, cls("NSGraphicsContext"), "currentContext"),
-            "graphicsPort");
+        CGContextRef context = OBJC_CALL(CGContextRef, 
+            OBJC_CALL_1(id, CLS("NSGraphicsContext"), "currentContext"), 
+            "graphicsPort"
+        );
 
         CGContextDrawImage(
             context,
@@ -68,123 +81,65 @@ static void DrawRect(id self, SEL cmd, CGRect rect) {
     }
 }
 
-static BOOL WindowShouldClose(id self, SEL cmd, id sender) {
-    (void)self;
-    (void)cmd;
-    (void)sender;
-    fenster.hasCloseRequest = true;
-    return NO;
-}
+static void setupWindowDelegate(id window) {
+    Class delegateClass = objc_allocateClassPair(
+        (Class)CLS("NSObject"), 
+        "FensterRLDelegate", 
+        0
+    );
 
-static void WindowDidBecomeKey(id self, SEL cmd, id notification) {
-    (void)cmd;
-    (void)notification;
-    fenster.isFocused = true;
-}
+    class_addMethod(delegateClass, sel_getUid("windowShouldClose:"), 
+        (IMP)WindowShouldClose, "c@:@");
+    class_addMethod(delegateClass, sel_getUid("windowDidResize:"), 
+        (IMP)WindowDidResize, "v@:@");
+    class_addMethod(delegateClass, sel_getUid("windowDidMove:"), 
+        (IMP)WindowDidMove, "v@:@");
+    class_addMethod(delegateClass, sel_getUid("windowDidBecomeKey:"), 
+        (IMP)WindowDidBecomeKey, "v@:@");
+    class_addMethod(delegateClass, sel_getUid("windowDidResignKey:"), 
+        (IMP)WindowDidResignKey, "v@:@");
 
-static void WindowDidResignKey(id self, SEL cmd, id notification) {
-    (void)cmd;
-    (void)notification;
-    fenster.isFocused = false;
+    objc_registerClassPair(delegateClass);
+    
+    id delegateInstance = OBJC_CALL_1(id, OBJC_CALL_1(id, (id)delegateClass, "alloc"), "init");
+    OBJC_CALL_2(void, window, "setDelegate:", delegateInstance);
+
+    id defaultCenter = OBJC_CALL_1(id, CLS("NSNotificationCenter"), "defaultCenter");
+    OBJC_CALL_0(void, 
+        defaultCenter,
+        "addObserver:selector:name:object:"
+    );
 }
 
 static void PlatformInitWindow(const char* title) {
-    msg(id, cls("NSApplication"), "sharedApplication");
-    msg1(void, NSApp, "setActivationPolicy:", NSInteger, 0);
+    OBJC_CALL_1(id, CLS("NSApplication"), "sharedApplication");
+    ((void (*)(id, SEL, NSInteger))objc_msgSend)(NSApp, sel_getUid("setActivationPolicy:"), 0);
 
     PlatformData* platform = malloc(sizeof(PlatformData));
     fenster.platformData = platform;
     platform->lastImage = NULL;
 
-    platform->window = msg4(
-        id,
-        msg(id, cls("NSWindow"), "alloc"),
-        "initWithContentRect:styleMask:backing:defer:",
-        CGRect, CGRectMake(0, 0, fenster.width, fenster.height),
-        NSUInteger, fenster.isResizable ? 15 : 3,
-        NSUInteger, 2,
-        BOOL, NO
+    platform->window = ((id (*)(id, SEL, CGRect, NSUInteger, NSUInteger, BOOL))objc_msgSend)(
+        OBJC_CALL_1(id, CLS("NSWindow"), "alloc"),
+        sel_getUid("initWithContentRect:styleMask:backing:defer:"),
+        CGRectMake(0, 0, fenster.width, fenster.height),
+        fenster.isResizable ? 15 : 3,
+        2,
+        NO
     );
 
-    // Screen dimensions
     CGDirectDisplayID display = CGMainDisplayID();
     fenster.screenWidth = CGDisplayPixelsWide(display);
     fenster.screenHeight = CGDisplayPixelsHigh(display);
 
-    // Window position
-    CGRect frame = msg(CGRect, platform->window, "frame");
+    CGRect frame = OBJC_CALL_1(CGRect, platform->window, "frame");
     fenster.windowPosX = frame.origin.x;
     fenster.windowPosY = frame.origin.y;
 
-    Class windowDelegate = objc_allocateClassPair(
-        (Class)cls("NSObject"),
-        "FensterRLDelegate",
-        0
-    );
-
-    class_addMethod(
-        windowDelegate,
-        sel_getUid("windowShouldClose:"),
-        (IMP)WindowShouldClose,
-        "c@:@"
-    );
-
-    class_addMethod(
-        windowDelegate,
-        sel_getUid("windowDidResize:"),
-        (IMP)WindowDidResize,
-        "v@:@"
-    );
-
-    class_addMethod(
-        windowDelegate,
-        sel_getUid("windowDidMove:"),
-        (IMP)WindowDidMove,
-        "v@:@"
-    );
-
-    class_addMethod(
-        windowDelegate,
-        sel_getUid("windowDidBecomeKey:"),
-        (IMP)WindowDidBecomeKey,
-        "v@:@"
-    );
-
-    class_addMethod(
-        windowDelegate,
-        sel_getUid("windowDidResignKey:"),
-        (IMP)WindowDidResignKey,
-        "v@:@"
-    );
-
-    objc_registerClassPair(windowDelegate);
-
-    id delegateInstance = msg(id, msg(id, (id)windowDelegate, "alloc"), "init");
-
-    msg1(
-        void,
-        platform->window,
-        "setDelegate:",
-        id,
-        delegateInstance
-    );
-
-    msg4(void, msg(id, cls("NSNotificationCenter"), "defaultCenter"),
-        "addObserver:selector:name:object:",
-        id, delegateInstance,
-        SEL, sel_getUid("windowDidResize:"),
-        id, msg1(id, cls("NSString"), "stringWithUTF8String:", const char*, "NSWindowDidResizeNotification"),
-        id, platform->window);
-
-    msg4(void, msg(id, cls("NSNotificationCenter"), "defaultCenter"),
-        "addObserver:selector:name:object:",
-        id, delegateInstance,
-        SEL, sel_getUid("windowDidMove:"),
-        id, msg1(id, cls("NSString"), "stringWithUTF8String:", const char*, "NSWindowDidMoveNotification"),
-        id, platform->window);
+    setupWindowDelegate(platform->window);
 
     Class viewClass = objc_allocateClassPair(
-        (Class)cls("NSView"),
+        (Class)CLS("NSView"),
         "FensterRLView",
         0
     );
@@ -198,25 +153,23 @@ static void PlatformInitWindow(const char* title) {
 
     objc_registerClassPair(viewClass);
 
-    platform->view = msg(id, msg(id, (id)viewClass, "alloc"), "init");
-    msg1(void, platform->window, "setContentView:", id, platform->view);
+    platform->view = OBJC_CALL_1(id, OBJC_CALL_1(id, (id)viewClass, "alloc"), "init");
+    OBJC_CALL_2(void, platform->window, "setContentView:", platform->view);
 
-    id nsTitle = msg1(
-        id,
-        cls("NSString"),
-        "stringWithUTF8String:",
-        const char*,
+    id nsTitle = ((id (*)(id, SEL, const char*))objc_msgSend)(
+        CLS("NSString"), 
+        sel_getUid("stringWithUTF8String:"), 
         title
     );
 
-    msg1(void, platform->window, "setTitle:", id, nsTitle);
-    msg1(void, platform->window, "makeKeyAndOrderFront:", id, nil);
-    msg(void, platform->window, "center");
-    msg1(void, NSApp, "activateIgnoringOtherApps:", BOOL, YES);
+    OBJC_CALL_2(void, platform->window, "setTitle:", nsTitle);
+    OBJC_CALL_1(void, platform->window, "makeKeyAndOrderFront:");
+    OBJC_CALL_1(void, platform->window, "center");
+    ((void (*)(id, SEL, BOOL))objc_msgSend)(NSApp, sel_getUid("activateIgnoringOtherApps:"), YES);
 
-    // Initial focus state
-    fenster.isFocused = msg(BOOL, platform->window, "isKeyWindow");
+    fenster.isFocused = OBJC_CALL_1(BOOL, platform->window, "isKeyWindow");
 }
+
 
 static double PlatformGetTime(void) {
     struct timespec ts;
@@ -229,29 +182,34 @@ static void PlatformSleep(long microseconds) {
 }
 
 static void PlatformWindowEventLoop(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
     fenster.hasCloseRequest = false;
     fenster.hasResized = false;
 
-    id event = msg4(
+    id event = OBJC_CALL(
         id,
         NSApp,
         "nextEventMatchingMask:untilDate:inMode:dequeue:",
-        NSUInteger, NSUIntegerMax,
-        id, NULL,
-        id, NSDefaultRunLoopMode,
-        BOOL, YES
+        NSUIntegerMax,
+        NULL,
+        NSDefaultRunLoopMode,
+        YES
     );
 
     if (event) {
-        msg1(void, NSApp, "sendEvent:", id, event);
+        NSUInteger evtype = OBJC_CALL(NSUInteger, event, "type");
+        if (evtype == 5 || evtype == 6) { // NSEventTypeMouseMoved
+            CGPoint xy = OBJC_CALL(CGPoint, event, "locationInWindow");
+            fenster.mousePosition[0] = (int)xy.x;
+            fenster.mousePosition[1] = (int)(fenster.mousePosition[1] - xy.y);
+        }
+        OBJC_CALL(void, NSApp, "sendEvent:", event);
     }
 }
 
 static void PlatformRenderFrame(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
+    PlatformData* platform = fenster.platformData;
 
-    // Release previous image if exists
+    // Release previous image
     if (platform->lastImage) {
         CGImageRelease(platform->lastImage);
     }
@@ -275,60 +233,58 @@ static void PlatformRenderFrame(void) {
     CGColorSpaceRelease(space);
     CGDataProviderRelease(provider);
 
-    // Trigger a redraw
-    msg1(
+    // Trigger redraw
+    OBJC_CALL(
         void,
-        msg(id, platform->window, "contentView"),
-        "setNeedsDisplay:",
-        BOOL,
+        OBJC_CALL(id, platform->window, "contentView"),
+        "setNeedsDisplay:", 
         YES
     );
 }
 
 static void PlatformCloseWindow(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
+    PlatformData* platform = fenster.platformData;
 
-    // Release the last image if it exists
+    // Release last image
     if (platform->lastImage) {
         CGImageRelease(platform->lastImage);
         platform->lastImage = NULL;
     }
 
-    msg(void, platform->window, "close");
+    OBJC_CALL(void, platform->window, "close");
     free(platform);
     fenster.platformData = NULL;
 }
 
 static void PlatformSetWindowTitle(const char* title) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    id nsTitle = msg1(
+    PlatformData* platform = fenster.platformData;
+    id nsTitle = OBJC_CALL(
         id,
-        cls("NSString"),
+        CLS("NSString"),
         "stringWithUTF8String:",
-        const char*,
         title
     );
-    msg1(void, platform->window, "setTitle:", id, nsTitle);
+    OBJC_CALL(void, platform->window, "setTitle:", nsTitle);
 }
 
 static void PlatformSetWindowPosition(int x, int y) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    CGRect frame = msg(CGRect, platform->window, "frame");
+    PlatformData* platform = fenster.platformData;
+    CGRect frame = OBJC_CALL(CGRect, platform->window, "frame");
     frame.origin.x = x;
     frame.origin.y = y;
-    msg2(void, platform->window, "setFrame:display:", CGRect, frame, BOOL, YES);
+    OBJC_CALL(void, platform->window, "setFrame:display:", frame, YES);
 }
 
 static void PlatformSetWindowSize(int width, int height) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
+    PlatformData* platform = fenster.platformData;
     CGRect newFrame = CGRectMake(0, 0, width, height);
-    msg2(void, platform->window, "setFrame:display:", CGRect, newFrame, BOOL, YES);
-    msg(void, platform->window, "center");
+    OBJC_CALL(void, platform->window, "setFrame:display:", newFrame, YES);
+    OBJC_CALL(void, platform->window, "center");
 }
 
 static void PlatformSetWindowFocused(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    msg1(void, platform->window, "makeKeyAndOrderFront:", id, nil);
+    PlatformData* platform = fenster.platformData;
+    OBJC_CALL(void, platform->window, "makeKeyAndOrderFront:", nil);
 }
 
 #endif // FENSTERRL_MAC_H

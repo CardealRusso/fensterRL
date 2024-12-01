@@ -56,7 +56,7 @@ static void PlatformInitWindow(const char* title) {
     
     XSelectInput(platform->display, platform->window, 
         ExposureMask | KeyPressMask | StructureNotifyMask | 
-        (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask
+        (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask | PointerMotionMask
     );
     
     platform->gc = XCreateGC(platform->display, platform->window, 0, NULL);
@@ -72,6 +72,14 @@ static void PlatformInitWindow(const char* title) {
     int revertTo;
     XGetInputFocus(platform->display, &focusedWindow, &revertTo);
     fenster.isFocused = (focusedWindow == platform->window);
+
+    // Initial mouse position
+    Window child;
+    int rootX, rootY, winX, winY;
+    unsigned int mask;
+    XQueryPointer(platform->display, platform->window, &root, &child, &rootX, &rootY, &winX, &winY, &mask);
+    fenster.mousePosition[0] = winX;
+    fenster.mousePosition[1] = winY;
 
     // Create XImage
     platform->image = XCreateImage(
@@ -149,6 +157,10 @@ static void PlatformWindowEventLoop(void) {
             
             case FocusOut:
                 fenster.isFocused = false;
+                break;
+            case MotionNotify:
+                fenster.mousePosition[0]  = event.xmotion.x;
+                fenster.mousePosition[1] = event.xmotion.y;
                 break;
             
         }
