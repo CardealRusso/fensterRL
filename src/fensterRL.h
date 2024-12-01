@@ -13,8 +13,10 @@ static struct {
   int height;
   uint32_t* buffer;
   double lastFrameTime;
-  bool isResizable;
+  bool isResizable, hasResized, isFocused, hasCloseRequest;
   void* platformData;
+  int screenWidth, screenHeight;
+  int windowPosX, windowPosY;
 } fenster = {0};
 
 #ifdef __linux__
@@ -102,19 +104,19 @@ int rl_GetWindowHeight(void) {
 }
 
 int rl_GetScreenWidth(void) {
-  return PlatformGetScreenWidth();
+  return fenster.screenWidth;
 }
 
 int rl_GetScreenHeight(void) {
-  return PlatformGetScreenHeight();
+  return fenster.screenHeight;
 }
 
 bool rl_IsWindowFocused(void) {
-  return PlatformIsWindowFocused();
+  return fenster.isFocused;
 }
 
 bool rl_IsCloseRequested(void) {
-  return closeRequested;
+  return fenster.hasCloseRequest;
 }
 
 void rl_SetWindowTitle(const char* title) {
@@ -134,14 +136,14 @@ void rl_SetWindowFocused(void) {
 }
 
 bool rl_IsWindowResized(void) {
-  return rl_WindowResized;
+  return fenster.hasResized;
 }
 
 int rl_GetWindowPositionX(void) {
-  return PlatformGetWindowPositionX();
+  return fenster.windowPosX;
 }
 
 int rl_GetWindowPositionY(void) {
-  return PlatformGetWindowPositionY();
+  return fenster.windowPosY;
 }
 #endif // FENSTERRL_H

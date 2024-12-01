@@ -8,13 +8,10 @@ typedef struct {
     BITMAPINFO bitmapInfo;
 } PlatformData;
 
-static bool closeRequested = false;
-static bool rl_WindowResized = false;
-
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CLOSE:
-            closeRequested = true;
+            fenster.hasCloseRequest = true;
             return 0;
 
         case WM_DESTROY:
@@ -28,7 +25,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             int newHeight = HIWORD(lParam);
             
             if (newWidth > 0 && newHeight > 0) {
-                rl_WindowResized = true;
+                fenster.hasResized = true;
                 fenster.buffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
                 fenster.width = newWidth;
                 fenster.height = newHeight;
@@ -37,6 +34,26 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             }
             return 0;
         }
+
+        case WM_MOVE: {
+            fenster.windowPosX = (int)(short)LOWORD(lParam);
+            fenster.windowPosY = (int)(short)HIWORD(lParam);
+            return 0;
+        }
+
+        case WM_DISPLAYCHANGE: {
+            fenster.screenWidth = (int)LOWORD(lParam);
+            fenster.screenHeight = (int)HIWORD(lParam);
+            return 0;
+        }
+
+        case WM_SETFOCUS:
+            fenster.isFocused = true;
+            return 0;
+
+        case WM_KILLFOCUS:
+            fenster.isFocused = false;
+            return 0;
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -76,6 +93,16 @@ static void PlatformInitWindow(const char* title) {
         NULL
     );
 
+    fenster.screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    fenster.screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    RECT rect;
+    GetWindowRect(platform->hwnd, &rect);
+    fenster.windowPosX = rect.left;
+    fenster.windowPosY = rect.top;
+
+    fenster.isFocused = (GetForegroundWindow() == platform->hwnd);
+
     SetWindowLongPtr(platform->hwnd, GWLP_USERDATA, (LONG_PTR)&fenster);
     ShowWindow(platform->hwnd, SW_SHOW);
     UpdateWindow(platform->hwnd);
@@ -83,12 +110,12 @@ static void PlatformInitWindow(const char* title) {
 
 static void PlatformWindowEventLoop(void) {
     MSG msg;
-    closeRequested = false;
-    rl_WindowResized = false;
+    fenster.hasCloseRequest = false;
+    fenster.hasResized = false;
 
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
-            closeRequested = true;
+            fenster.hasCloseRequest = true;
         } else {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -128,14 +155,6 @@ static void PlatformCloseWindow(void) {
     fenster.platformData = NULL;
 }
 
-static int PlatformGetScreenWidth(void) {
-    return GetSystemMetrics(SM_CXSCREEN);
-}
-
-static int PlatformGetScreenHeight(void) {
-    return GetSystemMetrics(SM_CYSCREEN);
-}
-
 static void PlatformSleep(long microseconds) {
     Sleep(microseconds / 1000);
 }
@@ -145,11 +164,6 @@ static double PlatformGetTime(void) {
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&count);
     return (double)count.QuadPart / freq.QuadPart;
-}
-
-static bool PlatformIsWindowFocused(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    return GetForegroundWindow() == platform->hwnd;
 }
 
 static void PlatformSetWindowTitle(const char* title) {
@@ -171,23 +185,4 @@ static void PlatformSetWindowFocused(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     SetForegroundWindow(platform->hwnd);
 }
-
-static int PlatformGetWindowPositionX(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    RECT rect;
-    if (GetWindowRect(platform->hwnd, &rect)) {
-        return rect.left;
-    }
-    return -1;
-}
-
-static int PlatformGetWindowPositionY(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    RECT rect;
-    if (GetWindowRect(platform->hwnd, &rect)) {
-        return rect.top;
-    }
-    return -1;
-}
-
 #endif // FENSTERRL_WINDOWS_H

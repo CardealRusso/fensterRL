@@ -11,6 +11,8 @@ int main(void) {
       printf("bye\n");
       break;
     }
+
+    printf("%d\n",rl_GetWindowPositionX());
     rl_SetWindowTitle("test");
     for (int y = 0; y < rl_GetWindowHeight(); y++) {
       for (int x = 0; x < rl_GetWindowWidth(); x++) {
@@ -23,7 +25,7 @@ int main(void) {
     if (rl_IsWindowFocused()) {
       rl_WindowSync(60);
     } else {
-      printf("Reduced FPS while the window is not in focus to save a bit of cpu cycling.\n");
+      //printf("Reduced FPS while the window is not in focus to save a bit of cpu cycling.\n");
       rl_WindowSync(5);
     }
   }

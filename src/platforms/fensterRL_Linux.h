@@ -5,8 +5,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <unistd.h>
-static bool closeRequested = false;
-static bool rl_WindowResized = false;
 
 typedef struct {
     Display* display;
@@ -15,18 +13,6 @@ typedef struct {
     XImage* image;
     Atom wm_delete_window;
 } PlatformData;
-
-static int PlatformGetScreenWidth(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    int screen = DefaultScreen(platform->display);
-    return DisplayWidth(platform->display, screen);
-}
-
-static int PlatformGetScreenHeight(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    int screen = DefaultScreen(platform->display);
-    return DisplayHeight(platform->display, screen);
-}
 
 static void PlatformSleep(long microseconds) {
     struct timespec ts;
@@ -51,6 +37,10 @@ static void PlatformInitWindow(const char* title) {
     int screen = DefaultScreen(platform->display);
     Window root = RootWindow(platform->display, screen);
     
+    // Get screen dimensions
+    fenster.screenWidth = DisplayWidth(platform->display, screen);
+    fenster.screenHeight = DisplayHeight(platform->display, screen);
+
     platform->window = XCreateSimpleWindow(
         platform->display, root,
         0, 0, fenster.width, fenster.height, 0,
@@ -66,11 +56,23 @@ static void PlatformInitWindow(const char* title) {
     
     XSelectInput(platform->display, platform->window, 
         ExposureMask | KeyPressMask | StructureNotifyMask | 
-        (fenster.isResizable ? 0 : ResizeRedirectMask)
+        (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask
     );
     
     platform->gc = XCreateGC(platform->display, platform->window, 0, NULL);
     
+    // Get initial window position
+    XWindowAttributes attributes;
+    XGetWindowAttributes(platform->display, platform->window, &attributes);
+    fenster.windowPosX = attributes.x;
+    fenster.windowPosY = attributes.y;
+    
+    // Initial focus state
+    Window focusedWindow;
+    int revertTo;
+    XGetInputFocus(platform->display, &focusedWindow, &revertTo);
+    fenster.isFocused = (focusedWindow == platform->window);
+
     // Create XImage
     platform->image = XCreateImage(
         platform->display,
@@ -88,48 +90,67 @@ static void PlatformInitWindow(const char* title) {
 static void PlatformWindowEventLoop(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     XEvent event;
-    closeRequested = false;
-    rl_WindowResized = false;
+    fenster.hasCloseRequest = false;
+    fenster.hasResized = false;
 
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
         
-        if (event.type == ClientMessage) {
-            if (event.xclient.data.l[0] == (long)platform->wm_delete_window) {
-              closeRequested = true;
-            }
-        }
-        
-        if (fenster.isResizable && event.type == ConfigureNotify) {
-            int newWidth = event.xconfigure.width;
-            int newHeight = event.xconfigure.height;
-            
-            // If window size changed
-            if (newWidth != fenster.width || newHeight != fenster.height) {
-                // Realloc buffer
-                uint32_t* newBuffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
-                if (newBuffer) {
-                    rl_WindowResized = true;
-                    fenster.buffer = newBuffer;
-                    
-                    // Update platform image
-                    platform->image->data = NULL;  // Prevent XDestroyImage from freeing our buffer
-                    XDestroyImage(platform->image);
-                    
-                    // Recreate XImage with new dimensions and buffer
-                    platform->image = XCreateImage(
-                        platform->display,
-                        DefaultVisual(platform->display, DefaultScreen(platform->display)),
-                        DefaultDepth(platform->display, DefaultScreen(platform->display)),
-                        ZPixmap, 0, (char*)fenster.buffer,
-                        newWidth, newHeight, 32, 0
-                    );
-                    
-                    // Update fenster dimensions
-                    fenster.width = newWidth;
-                    fenster.height = newHeight;
+        switch (event.type) {
+            case ClientMessage:
+                if (event.xclient.data.l[0] == (long)platform->wm_delete_window) {
+                    fenster.hasCloseRequest = true;
                 }
-            }
+                break;
+            
+            case ConfigureNotify:
+                PlatformData* platform = (PlatformData*)fenster.platformData;
+                int screen = DefaultScreen(platform->display);
+                fenster.screenWidth = DisplayWidth(platform->display, screen);
+                fenster.screenHeight = DisplayHeight(platform->display, screen);
+                fenster.windowPosX = event.xconfigure.x;
+                fenster.windowPosY = event.xconfigure.y;
+                if (fenster.isResizable) {
+                    int newWidth = event.xconfigure.width;
+                    int newHeight = event.xconfigure.height;
+                    
+                    // If window size changed
+                    if (newWidth != fenster.width || newHeight != fenster.height) {
+                        // Realloc buffer
+                        uint32_t* newBuffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
+                        if (newBuffer) {
+                            fenster.hasResized = true;
+                            fenster.buffer = newBuffer;
+                            
+                            // Update platform image
+                            platform->image->data = NULL;  // Prevent XDestroyImage from freeing our buffer
+                            XDestroyImage(platform->image);
+                            
+                            // Recreate XImage with new dimensions and buffer
+                            platform->image = XCreateImage(
+                                platform->display,
+                                DefaultVisual(platform->display, DefaultScreen(platform->display)),
+                                DefaultDepth(platform->display, DefaultScreen(platform->display)),
+                                ZPixmap, 0, (char*)fenster.buffer,
+                                newWidth, newHeight, 32, 0
+                            );
+                            
+                            // Update fenster dimensions
+                            fenster.width = newWidth;
+                            fenster.height = newHeight;
+                        }
+                    }
+                }
+                break;
+            
+            case FocusIn:
+                fenster.isFocused = true;
+                break;
+            
+            case FocusOut:
+                fenster.isFocused = false;
+                break;
+            
         }
     }
 }
@@ -143,17 +164,6 @@ static void PlatformCloseWindow(void) {
     XCloseDisplay(platform->display);
     free(platform);
     fenster.platformData = NULL;
-}
-
-static bool PlatformIsWindowFocused(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    if (!platform || !platform->display || !platform->window) return false;
-
-    Window focusedWindow;
-    int revertTo;
-    XGetInputFocus(platform->display, &focusedWindow, &revertTo);
-
-    return (focusedWindow == platform->window);
 }
 
 void PlatformRenderFrame(void) {
@@ -198,23 +208,4 @@ static void PlatformSetWindowFocused(void) {
     }
 }
 
-static int PlatformGetWindowPositionX(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    if (platform && platform->display && platform->window) {
-        XWindowAttributes attributes;
-        XGetWindowAttributes(platform->display, platform->window, &attributes);
-        return attributes.x;
-    }
-    return -1; // Returns -1 if no position
-}
-
-static int PlatformGetWindowPositionY(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
-    if (platform && platform->display && platform->window) {
-        XWindowAttributes attributes;
-        XGetWindowAttributes(platform->display, platform->window, &attributes);
-        return attributes.y;
-    }
-    return -1; // Returns -1 if no position
-}
 #endif // FENSTERRL_LINUX_H
