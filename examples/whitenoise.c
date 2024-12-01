@@ -1,11 +1,16 @@
 #include "fensterRL.h"
+#include <stdio.h>
 
 int main(void) {
   rl_SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   rl_InitWindow(800, 600, "White Noise Example");
-  rl_SetTargetFPS(60);
 
-  while (!rl_WindowShouldClose()) {
+  while (true) {
+    rl_WindowEventLoop();
+    if (rl_IsCloseRequested()) {
+      printf("bye\n");
+      break;
+    }
 
     for (int y = 0; y < rl_GetWindowHeight(); y++) {
       for (int x = 0; x < rl_GetWindowWidth(); x++) {
@@ -13,6 +18,14 @@ int main(void) {
       }
     }
 
+    rl_RenderFrame();
+
+    if (rl_IsWindowFocused()) {
+      rl_WindowSync(60);
+    } else {
+      printf("Reduced FPS while the window is not in focus to save a bit of cpu cycling.\n");
+      rl_WindowSync(5);
+    }
   }
 
   rl_CloseWindow();

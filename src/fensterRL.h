@@ -12,18 +12,17 @@ static struct {
   int width;
   int height;
   uint32_t* buffer;
-  int targetFPS;
   double lastFrameTime;
   bool isResizable;
   void* platformData;
 } fenster = {0};
 
 #ifdef __linux__
-  #include "plataforms/fensterRL_Linux.h"
+  #include "platforms/fensterRL_Linux.h"
 #elif defined(_WIN32)
-  #include "plataforms/fensterRL_Windows.h"
+  #include "platforms/fensterRL_Windows.h"
 #elif defined(__APPLE__)
-  #include "plataforms/fensterRL_Mac.h"
+  #include "platforms/fensterRL_Mac.h"
 #endif
 
 void rl_SetConfigFlags(int flags) {
@@ -34,13 +33,8 @@ void rl_InitWindow(int width, int height, const char* title) {
   fenster.width = width;
   fenster.height = height;
   fenster.buffer = (uint32_t*)malloc(width * height * sizeof(uint32_t));
-  fenster.targetFPS = 60;
   fenster.lastFrameTime = 0;
   PlatformInitWindow(title);
-}
-
-void rl_SetTargetFPS(int fps) {
-  fenster.targetFPS = fps;
 }
 
 void rl_ClearBackground(uint32_t color) {
@@ -55,9 +49,28 @@ void rl_SetPixel(int x, int y, uint32_t color) {
   }
 }
 
-bool rl_WindowShouldClose(void) {
-  if (fenster.targetFPS > 0) {
-    double targetFrameTime = 1.0 / fenster.targetFPS;
+static inline void rl_SetPixelUnsafe(int x, int y, uint32_t color) {
+    fenster.buffer[y * fenster.width + x] = color;
+}
+
+uint32_t rl_GetPixel(int x, int y) {
+  if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
+    return fenster.buffer[y * fenster.width + x];
+  }
+  return 0; // Return 0 (black) if the coordinates are out of bounds
+}
+
+static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
+  return fenster.buffer[y * fenster.width + x];
+}
+
+void rl_WindowEventLoop(void) {
+  PlatformWindowEventLoop();
+}
+
+void rl_WindowSync(int fps) {
+  if (fps > 0) {
+    double targetFrameTime = 1.0 / fps;
     double currentTime = PlatformGetTime();
     double elapsed = currentTime - fenster.lastFrameTime;
 
@@ -68,8 +81,10 @@ bool rl_WindowShouldClose(void) {
 
     fenster.lastFrameTime = currentTime;
   }
+}
 
-  return PlatformWindowShouldClose();
+void rl_RenderFrame(void){
+  PlatformRenderFrame();
 }
 
 void rl_CloseWindow(void) {
@@ -95,6 +110,10 @@ int rl_GetScreenHeight(void) {
 }
 
 bool rl_IsWindowFocused(void) {
-  return PlataformIsWindowFocused();
+  return PlatformIsWindowFocused();
+}
+
+bool rl_IsCloseRequested(void) {
+    return closeRequested;
 }
 #endif // FENSTERRL_H

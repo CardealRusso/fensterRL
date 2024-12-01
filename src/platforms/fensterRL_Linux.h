@@ -5,6 +5,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <unistd.h>
+static bool closeRequested = false;
 
 typedef struct {
     Display* display;
@@ -83,16 +84,17 @@ static void PlatformInitWindow(const char* title) {
     XFlush(platform->display);
 }
 
-static bool PlatformWindowShouldClose(void) {
+static void PlatformWindowEventLoop(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     XEvent event;
-    
+    closeRequested = false;
+
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
         
         if (event.type == ClientMessage) {
             if (event.xclient.data.l[0] == (long)platform->wm_delete_window) {
-                return true;
+              closeRequested = true;
             }
         }
         
@@ -127,15 +129,6 @@ static bool PlatformWindowShouldClose(void) {
             }
         }
     }
-    
-    // Update window content
-    XPutImage(
-        platform->display, platform->window, platform->gc, platform->image,
-        0, 0, 0, 0, fenster.width, fenster.height
-    );
-    XFlush(platform->display);
-    
-    return false;
 }
 
 static void PlatformCloseWindow(void) {
@@ -149,7 +142,7 @@ static void PlatformCloseWindow(void) {
     fenster.platformData = NULL;
 }
 
-static bool PlataformIsWindowFocused(void) {
+static bool PlatformIsWindowFocused(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     if (!platform || !platform->display || !platform->window) return false;
 
@@ -158,5 +151,15 @@ static bool PlataformIsWindowFocused(void) {
     XGetInputFocus(platform->display, &focusedWindow, &revertTo);
 
     return (focusedWindow == platform->window);
+}
+
+void PlatformRenderFrame(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+
+    XPutImage(
+        platform->display, platform->window, platform->gc, platform->image,
+        0, 0, 0, 0, fenster.width, fenster.height
+    );
+    XFlush(platform->display);
 }
 #endif // FENSTERRL_LINUX_H

@@ -4,49 +4,22 @@
 
 typedef struct {
     HWND hwnd;
-    HDC memoryDC;
     HBITMAP bitmap;
     BITMAPINFO bitmapInfo;
 } PlatformData;
 
+static bool closeRequested = false;
+
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CLOSE:
-            DestroyWindow(hwnd);
+            closeRequested = true;
             return 0;
-            
+
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
-            
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            
-            BITMAPINFO bi = {0};
-            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-            bi.bmiHeader.biWidth = fenster.width;
-            bi.bmiHeader.biHeight = -fenster.height;
-            bi.bmiHeader.biPlanes = 1;
-            bi.bmiHeader.biBitCount = 32;
-            bi.bmiHeader.biCompression = BI_RGB;
-            
-            StretchDIBits(
-                hdc, 
-                0, 0, 
-                fenster.width, fenster.height, 
-                0, 0, 
-                fenster.width, fenster.height, 
-                fenster.buffer, 
-                &bi, 
-                DIB_RGB_COLORS, 
-                SRCCOPY
-            );
-            
-            EndPaint(hwnd, &ps);
-            return 0;
-        }
-        
+
         case WM_SIZE: {
             if (!fenster.isResizable) return 0;
             
@@ -62,21 +35,10 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             }
             return 0;
         }
-        
+
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
-}
-
-static double PlatformGetTime(void) {
-    LARGE_INTEGER freq, count;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&count);
-    return count.QuadPart * 1000.0 / freq.QuadPart / 1000.0;
-}
-
-static void PlatformSleep(long microseconds) {
-    Sleep(microseconds / 1000);
 }
 
 static void PlatformInitWindow(const char* title) {
@@ -117,32 +79,50 @@ static void PlatformInitWindow(const char* title) {
     UpdateWindow(platform->hwnd);
 }
 
-static bool PlatformWindowShouldClose(void) {
-    PlatformData* platform = (PlatformData*)fenster.platformData;
+static void PlatformWindowEventLoop(void) {
     MSG msg;
-    
+    closeRequested = false;
+
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
-            return true;
+            closeRequested = true;
+        } else {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
     }
-    
-    InvalidateRect(platform->hwnd, NULL, FALSE);
-    return false;
 }
+
+static void PlatformRenderFrame(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    HDC hdc = GetDC(platform->hwnd);
+
+    BITMAPINFO bi = {0};
+    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bi.bmiHeader.biWidth = fenster.width;
+    bi.bmiHeader.biHeight = -fenster.height;
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+
+    SetDIBitsToDevice(hdc, 
+                      0, 0, fenster.width, fenster.height, 
+                      0, 0, 
+                      0, fenster.height, 
+                      fenster.buffer, &bi, DIB_RGB_COLORS);
+
+    ReleaseDC(platform->hwnd, hdc);
+}
+
 
 static void PlatformCloseWindow(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
-    
+
     DeleteObject(platform->bitmap);
-    DeleteDC(platform->memoryDC);
     DestroyWindow(platform->hwnd);
-    
+
     free(platform);
     fenster.platformData = NULL;
-    fenster.buffer = NULL;
 }
 
 static int PlatformGetScreenWidth(void) {
@@ -153,7 +133,18 @@ static int PlatformGetScreenHeight(void) {
     return GetSystemMetrics(SM_CYSCREEN);
 }
 
-static bool PlataformIsWindowFocused(void) {
+static void PlatformSleep(long microseconds) {
+    Sleep(microseconds / 1000);
+}
+
+static double PlatformGetTime(void) {
+    LARGE_INTEGER freq, count;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+    return (double)count.QuadPart / freq.QuadPart;
+}
+
+static bool PlatformIsWindowFocused(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     return GetForegroundWindow() == platform->hwnd;
 }

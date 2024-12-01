@@ -16,10 +16,13 @@
 extern id const NSDefaultRunLoopMode;
 extern id const NSApp;
 
+static bool closeRequested = false;
+
 typedef struct {
    id window;
    id view;
    CGContextRef context;
+   CGImageRef lastImage;  // Store the last created image
 } PlatformData;
 
 static void WindowDidResize(id self, SEL cmd, id notification) {
@@ -42,43 +45,25 @@ static void DrawRect(id self, SEL cmd, CGRect rect) {
    
    PlatformData* platform = (PlatformData*)fenster.platformData;
    
-   CGContextRef context = msg(CGContextRef, 
-       msg(id, cls("NSGraphicsContext"), "currentContext"), 
-       "graphicsPort");
-   
-   CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
-   CGDataProviderRef provider = CGDataProviderCreateWithData(
-       NULL, fenster.buffer, 
-       fenster.width * fenster.height * 4, NULL
-   );
-   
-   CGImageRef img = CGImageCreate(
-       fenster.width, fenster.height, 
-       8, 32, fenster.width * 4, 
-       space,
-       kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
-       provider, NULL, false, 
-       kCGRenderingIntentDefault
-   );
-   
-   CGColorSpaceRelease(space);
-   CGDataProviderRelease(provider);
-   
-   CGContextDrawImage(
-       context, 
-       CGRectMake(0, 0, fenster.width, fenster.height), 
-       img
-   );
-   
-   CGImageRelease(img);
+   if (platform->lastImage) {
+       CGContextRef context = msg(CGContextRef, 
+           msg(id, cls("NSGraphicsContext"), "currentContext"), 
+           "graphicsPort");
+       
+       CGContextDrawImage(
+           context, 
+           CGRectMake(0, 0, fenster.width, fenster.height), 
+           platform->lastImage
+       );
+   }
 }
 
 static BOOL WindowShouldClose(id self, SEL cmd, id sender) {
    (void)self;
    (void)cmd;
    (void)sender;
-   msg1(void, NSApp, "terminate:", id, NSApp);
-   return YES;
+   closeRequested = true;
+   return NO;
 }
 
 static void PlatformInitWindow(const char* title) {
@@ -87,6 +72,7 @@ static void PlatformInitWindow(const char* title) {
    
    PlatformData* platform = malloc(sizeof(PlatformData));
    fenster.platformData = platform;
+   platform->lastImage = NULL;
    
    platform->window = msg4(
        id, 
@@ -179,8 +165,9 @@ static void PlatformSleep(long microseconds) {
    usleep(microseconds);
 }
 
-static bool PlatformWindowShouldClose(void) {
+static void PlatformWindowEventLoop(void) {
    PlatformData* platform = (PlatformData*)fenster.platformData;
+   closeRequested = false;
    
    id event = msg4(
        id,
@@ -195,7 +182,36 @@ static bool PlatformWindowShouldClose(void) {
    if (event) {
        msg1(void, NSApp, "sendEvent:", id, event);
    }
+}
+
+static void PlatformRenderFrame(void) {
+   PlatformData* platform = (PlatformData*)fenster.platformData;
    
+   // Release previous image if exists
+   if (platform->lastImage) {
+       CGImageRelease(platform->lastImage);
+   }
+   
+   // Create new image
+   CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+   CGDataProviderRef provider = CGDataProviderCreateWithData(
+       NULL, fenster.buffer, 
+       fenster.width * fenster.height * 4, NULL
+   );
+   
+   platform->lastImage = CGImageCreate(
+       fenster.width, fenster.height, 
+       8, 32, fenster.width * 4, 
+       space,
+       kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
+       provider, NULL, false, 
+       kCGRenderingIntentDefault
+   );
+   
+   CGColorSpaceRelease(space);
+   CGDataProviderRelease(provider);
+   
+   // Trigger a redraw
    msg1(
        void,
        msg(id, platform->window, "contentView"),
@@ -203,12 +219,17 @@ static bool PlatformWindowShouldClose(void) {
        BOOL,
        YES
    );
-   
-   return false;
 }
 
 static void PlatformCloseWindow(void) {
    PlatformData* platform = (PlatformData*)fenster.platformData;
+   
+   // Release the last image if it exists
+   if (platform->lastImage) {
+       CGImageRelease(platform->lastImage);
+       platform->lastImage = NULL;
+   }
+   
    msg(void, platform->window, "close");
    free(platform);
    fenster.platformData = NULL;
@@ -224,8 +245,13 @@ static int PlatformGetScreenHeight(void) {
     return CGDisplayPixelsHigh(display);
 }
 
-static bool PlataformIsWindowFocused(void) {
+static bool PlatformIsWindowFocused(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     return msg(BOOL, platform->window, "isKeyWindow");
 }
+
+static bool PlatformWindowShouldClose(void) {
+   return closeRequested;
+}
+
 #endif // FENSTERRL_MAC_H
