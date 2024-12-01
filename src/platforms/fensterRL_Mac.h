@@ -17,6 +17,7 @@ extern id const NSDefaultRunLoopMode;
 extern id const NSApp;
 
 static bool closeRequested = false;
+static bool rl_WindowResized = false;
 
 typedef struct {
    id window;
@@ -32,7 +33,8 @@ static void WindowDidResize(id self, SEL cmd, id notification) {
    if (!fenster.isResizable) return;
 
    CGRect frame = msg(CGRect, msg(id, notification, "object"), "frame");
-   
+
+   rl_WindowResized = true;
    free(fenster.buffer);
    fenster.buffer = malloc(frame.size.width * frame.size.height * sizeof(uint32_t));
    fenster.width = frame.size.width;
@@ -168,6 +170,7 @@ static void PlatformSleep(long microseconds) {
 static void PlatformWindowEventLoop(void) {
    PlatformData* platform = (PlatformData*)fenster.platformData;
    closeRequested = false;
+   rl_WindowResized = false;
    
    id event = msg4(
        id,
@@ -235,6 +238,18 @@ static void PlatformCloseWindow(void) {
    fenster.platformData = NULL;
 }
 
+static void PlatformSetWindowTitle(const char* title) {
+   PlatformData* platform = (PlatformData*)fenster.platformData;
+   id nsTitle = msg1(
+       id,
+       cls("NSString"),
+       "stringWithUTF8String:",
+       const char*,
+       title
+   );
+   msg1(void, platform->window, "setTitle:", id, nsTitle);
+}
+
 static int PlatformGetScreenWidth(void) {
     CGDirectDisplayID display = CGMainDisplayID();
     return CGDisplayPixelsWide(display);
@@ -250,8 +265,36 @@ static bool PlatformIsWindowFocused(void) {
     return msg(BOOL, platform->window, "isKeyWindow");
 }
 
-static bool PlatformWindowShouldClose(void) {
-   return closeRequested;
+static void PlatformSetWindowPosition(int x, int y) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    CGRect frame = msg(CGRect, platform->window, "frame");
+    frame.origin.x = x;
+    frame.origin.y = y;
+    msg2(void, platform->window, "setFrame:display:", CGRect, frame, BOOL, YES);
 }
 
+static void PlatformSetWindowSize(int width, int height) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    CGRect newFrame = CGRectMake(0, 0, width, height);
+    msg2(void, platform->window, "setFrame:display:", CGRect, newFrame, BOOL, YES);
+    msg(void, platform->window, "center");
+}
+
+static void PlatformSetWindowFocused(void) {
+   PlatformData* platform = (PlatformData*)fenster.platformData;
+   msg1(void, platform->window, "makeKeyAndOrderFront:", id, nil);
+}
+
+
+static int PlatformGetWindowPositionX(void) {
+   PlatformData* platform = (PlatformData*)fenster.platformData;
+   CGRect frame = msg(CGRect, platform->window, "frame");
+   return frame.origin.x;
+}
+
+static int PlatformGetWindowPositionY(void) {
+   PlatformData* platform = (PlatformData*)fenster.platformData;
+   CGRect frame = msg(CGRect, platform->window, "frame");
+   return frame.origin.y;
+}
 #endif // FENSTERRL_MAC_H

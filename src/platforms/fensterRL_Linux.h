@@ -6,6 +6,7 @@
 #include <X11/Xutil.h>
 #include <unistd.h>
 static bool closeRequested = false;
+static bool rl_WindowResized = false;
 
 typedef struct {
     Display* display;
@@ -88,6 +89,7 @@ static void PlatformWindowEventLoop(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     XEvent event;
     closeRequested = false;
+    rl_WindowResized = false;
 
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
@@ -107,6 +109,7 @@ static void PlatformWindowEventLoop(void) {
                 // Realloc buffer
                 uint32_t* newBuffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
                 if (newBuffer) {
+                    rl_WindowResized = true;
                     fenster.buffer = newBuffer;
                     
                     // Update platform image
@@ -161,5 +164,57 @@ void PlatformRenderFrame(void) {
         0, 0, 0, 0, fenster.width, fenster.height
     );
     XFlush(platform->display);
+}
+
+static void PlatformSetWindowTitle(const char* title) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XStoreName(platform->display, platform->window, title);
+        XFlush(platform->display);
+    }
+}
+
+static void PlatformSetWindowPosition(int x, int y) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XMoveWindow(platform->display, platform->window, x, y);
+        XFlush(platform->display);
+    }
+}
+
+static void PlatformSetWindowSize(int width, int height) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XResizeWindow(platform->display, platform->window, width, height);
+        XFlush(platform->display);
+    }
+}
+
+static void PlatformSetWindowFocused(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XRaiseWindow(platform->display, platform->window);
+        XFlush(platform->display);
+    }
+}
+
+static int PlatformGetWindowPositionX(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XWindowAttributes attributes;
+        XGetWindowAttributes(platform->display, platform->window, &attributes);
+        return attributes.x;
+    }
+    return -1; // Returns -1 if no position
+}
+
+static int PlatformGetWindowPositionY(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    if (platform && platform->display && platform->window) {
+        XWindowAttributes attributes;
+        XGetWindowAttributes(platform->display, platform->window, &attributes);
+        return attributes.y;
+    }
+    return -1; // Returns -1 if no position
 }
 #endif // FENSTERRL_LINUX_H

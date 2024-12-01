@@ -114,6 +114,34 @@ bool rl_IsWindowFocused(void) {
 }
 
 bool rl_IsCloseRequested(void) {
-    return closeRequested;
+  return closeRequested;
+}
+
+void rl_SetWindowTitle(const char* title) {
+  PlatformSetWindowTitle(title);
+}
+
+void rl_SetWindowPosition(int x, int y) {
+  PlatformSetWindowPosition(x, y);
+}
+
+void rl_SetWindowSize(int width, int height) {
+  PlatformSetWindowSize(width, height);
+}
+
+void rl_SetWindowFocused(void) {
+  PlatformSetWindowFocused();
+}
+
+bool rl_IsWindowResized(void) {
+  return rl_WindowResized;
+}
+
+int rl_GetWindowPositionX(void) {
+  return PlatformGetWindowPositionX();
+}
+
+int rl_GetWindowPositionY(void) {
+  return PlatformGetWindowPositionY();
 }
 #endif // FENSTERRL_H

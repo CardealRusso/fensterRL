@@ -9,6 +9,7 @@ typedef struct {
 } PlatformData;
 
 static bool closeRequested = false;
+static bool rl_WindowResized = false;
 
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -27,6 +28,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             int newHeight = HIWORD(lParam);
             
             if (newWidth > 0 && newHeight > 0) {
+                rl_WindowResized = true;
                 fenster.buffer = realloc(fenster.buffer, newWidth * newHeight * sizeof(uint32_t));
                 fenster.width = newWidth;
                 fenster.height = newHeight;
@@ -82,6 +84,7 @@ static void PlatformInitWindow(const char* title) {
 static void PlatformWindowEventLoop(void) {
     MSG msg;
     closeRequested = false;
+    rl_WindowResized = false;
 
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
@@ -148,4 +151,43 @@ static bool PlatformIsWindowFocused(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     return GetForegroundWindow() == platform->hwnd;
 }
+
+static void PlatformSetWindowTitle(const char* title) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    SetWindowText(platform->hwnd, title);
+}
+
+static void PlatformSetWindowPosition(int x, int y) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    SetWindowPos(platform->hwnd, HWND_TOP, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+}
+
+static void PlatformSetWindowSize(int width, int height) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    SetWindowPos(platform->hwnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
+}
+
+static void PlatformSetWindowFocused(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    SetForegroundWindow(platform->hwnd);
+}
+
+static int PlatformGetWindowPositionX(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    RECT rect;
+    if (GetWindowRect(platform->hwnd, &rect)) {
+        return rect.left;
+    }
+    return -1;
+}
+
+static int PlatformGetWindowPositionY(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    RECT rect;
+    if (GetWindowRect(platform->hwnd, &rect)) {
+        return rect.top;
+    }
+    return -1;
+}
+
 #endif // FENSTERRL_WINDOWS_H
