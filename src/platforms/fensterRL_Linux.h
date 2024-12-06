@@ -4,6 +4,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #include <unistd.h>
 
 typedef struct {
@@ -12,6 +13,8 @@ typedef struct {
     GC gc;
     XImage* image;
     Atom wm_delete_window;
+    Atom wm_state;
+    Atom wm_fullscreen;
 } PlatformData;
 
 static void PlatformSleep(int64_t ms) {
@@ -53,7 +56,9 @@ static void PlatformInitWindow(const char* title) {
     // Handle window close button
     platform->wm_delete_window = XInternAtom(platform->display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(platform->display, platform->window, &platform->wm_delete_window, 1);
-    
+    platform->wm_state = XInternAtom(platform->display, "_NET_WM_STATE", False);
+    platform->wm_fullscreen = XInternAtom(platform->display, "_NET_WM_STATE_FULLSCREEN", False);
+
     XSelectInput(platform->display, platform->window, 
         ExposureMask | KeyPressMask | StructureNotifyMask | 
         (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask | PointerMotionMask
@@ -220,4 +225,12 @@ static void PlatformSetWindowFocused(void) {
     }
 }
 
+static void PlatformToggleFullscreen(void) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+    fenster.isFullScreen = !fenster.isFullScreen;
+    int mode = fenster.isFullScreen ? 1 : 0;
+    XChangeProperty(platform->display, platform->window, platform->wm_state, XA_ATOM, 32, PropModeReplace,
+        (unsigned char *)&platform->wm_fullscreen, mode);
+    XFlush(platform->display);
+}
 #endif // FENSTERRL_LINUX_H

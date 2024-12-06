@@ -8,6 +8,15 @@ typedef struct {
   BITMAPINFO bitmapInfo;
 } PlatformData;
 
+static WINDOWPLACEMENT g_wpPrev = { 
+    sizeof(WINDOWPLACEMENT), // length
+    0,                      // flags
+    SW_NORMAL,             // showCmd
+    {0, 0},                // ptMinPosition
+    {0, 0},                // ptMaxPosition
+    {0, 0, 0, 0}          // rcNormalPosition
+};
+
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
     case WM_CLOSE:
@@ -188,5 +197,32 @@ static void PlatformSetWindowSize(int width, int height) {
 static void PlatformSetWindowFocused(void) {
   PlatformData* platform = (PlatformData*)fenster.platformData;
   SetForegroundWindow(platform->hwnd);
+}
+
+static void PlatformToggleFullscreen(void) {
+  PlatformData* platform = (PlatformData*)fenster.platformData;
+  fenster.isFullScreen = !fenster.isFullScreen;
+
+  DWORD dwStyle = GetWindowLong(platform->hwnd, GWL_STYLE);
+
+  if (fenster.isFullScreen) {
+    GetWindowPlacement(platform->hwnd, &g_wpPrev);
+    SetWindowLong(platform->hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+
+    MONITORINFO mi = { sizeof(MONITORINFO) };
+    GetMonitorInfo(MonitorFromWindow(platform->hwnd, MONITOR_DEFAULTTOPRIMARY), &mi);
+
+    SetWindowPos(platform->hwnd, HWND_TOP, 
+      mi.rcMonitor.left, mi.rcMonitor.top,
+      mi.rcMonitor.right - mi.rcMonitor.left,
+      mi.rcMonitor.bottom - mi.rcMonitor.top,
+      SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+  } else {
+    SetWindowLong(platform->hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+    SetWindowPlacement(platform->hwnd, &g_wpPrev);
+    SetWindowPos(platform->hwnd, NULL, 0, 0, 0, 0, 
+      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | 
+      SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+  }
 }
 #endif // FENSTERRL_WINDOWS_H

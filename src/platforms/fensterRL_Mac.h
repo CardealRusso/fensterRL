@@ -8,8 +8,9 @@
 #include <ApplicationServices/ApplicationServices.h>
 
 // Simplified macro for Objective-C method calls with variable arguments
+#define msg(r, o, s) ((r(*)(id, SEL))objc_msgSend)(o, sel_getUid(s))
+#define msg1(r, o, s, A, a) ((r(*)(id, SEL, A))objc_msgSend)(o, sel_getUid(s), a)
 #define OBJC_CALL(ret, obj, sel, ...) ((ret (*)(id, SEL, ...))objc_msgSend)(obj, sel_getUid(sel), ##__VA_ARGS__)
-
 #define OBJC_CALL_2(ret, obj, sel, arg1) ((ret (*)(id, SEL, id))objc_msgSend)(obj, sel_getUid(sel), arg1)
 #define OBJC_CALL_1(ret, obj, sel) ((ret (*)(id, SEL))objc_msgSend)(obj, sel_getUid(sel))
 #define OBJC_CALL_0(ret, obj, sel) ((ret (*)(id, SEL))objc_msgSend)(obj, sel_getUid(sel))
@@ -290,4 +291,17 @@ static void PlatformSetWindowFocused(void) {
     OBJC_CALL(void, platform->window, "makeKeyAndOrderFront:", nil);
 }
 
+static void PlatformToggleFullscreen(void) {
+    PlatformData* platform = fenster.platformData;
+    msg1(void, platform->window, "toggleFullScreen:", id, nil);
+
+    NSUInteger styleMask = msg(NSUInteger, platform->window, "styleMask");
+    fenster.isFullScreen = !fenster.isFullScreen;
+    if (fenster.isFullScreen) {
+        styleMask |= 1 << 14;
+    } else {
+        styleMask &= ~(1 << 14);
+    }
+    msg1(void, platform->window, "setStyleMask:", NSUInteger, styleMask);
+}
 #endif // FENSTERRL_MAC_H

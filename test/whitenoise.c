@@ -5,6 +5,7 @@ int main(void) {
   rl_SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   rl_InitWindow(800, 600, "White Noise Example");
 
+  rl_ToggleFullscreen();
   while (true) {
     rl_PollInputEvents();
     if (rl_IsCloseRequested()) {
@@ -23,7 +24,7 @@ int main(void) {
     rl_RenderFrame();
 
     if (rl_IsWindowFocused()) {
-      rl_WindowSync(300);
+      rl_WindowSync(5);
     } else {
       //printf("Reduced FPS while the window is not in focus to save a bit of cpu cycling.\n");
       rl_WindowSync(5);

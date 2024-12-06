@@ -13,7 +13,7 @@ static struct {
   int height;
   uint32_t* buffer;
   double lastFrameTime;
-  bool isResizable, hasResized, isFocused, hasCloseRequest;
+  bool isResizable, hasResized, isFocused, hasCloseRequest, isFullScreen;
   void* platformData;
   int screenWidth, screenHeight;
   int windowPosX, windowPosY;
@@ -38,6 +38,7 @@ void rl_InitWindow(int width, int height, const char* title) {
   fenster.height = height;
   fenster.buffer = (uint32_t*)malloc(width * height * sizeof(uint32_t));
   fenster.lastFrameTime = 0;
+  fenster.isFullScreen = false;
   PlatformInitWindow(title);
 }
 
@@ -172,4 +173,11 @@ int rl_GetFPS(void) {
   return fenster.fps;
 }
 
+void rl_ToggleFullscreen(void) {
+  PlatformToggleFullscreen();
+}
+
+bool rl_IsWindowFullscreen(void) {
+  return fenster.isFullScreen;
+}
 #endif // FENSTERRL_H

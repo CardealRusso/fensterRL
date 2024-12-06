@@ -8,8 +8,10 @@ void rl_SetWindowTitle(const char* title);                     // Set title for 
 void rl_SetWindowPosition(int x, int y);                       // Set window position on screen
 void rl_SetWindowSize(int width, int height);                  // Set window dimensions
 void rl_SetWindowFocused(void);                                // Set window focused
+void rl_ToggleFullscreen(void);                                // Toggle window state: fullscreen/windowed, resizes window to match monitor resolution
 bool rl_IsWindowResized(void);                                 // Check if window has been resized last frame
 bool rl_IsWindowFocused(void);                                 // Check if window is currently focused
+bool rl_IsWindowFullscreen(void);                              // Check if window is currently fullscreen
 bool rl_IsCloseRequested(void);                                // Check if the close button has been pressed
 int rl_GetWindowPositionX(void);                               // Get window position X on monitor
 int rl_GetWindowPositionY(void);                               // Get window position Y on monitor
@@ -31,7 +33,7 @@ void rl_WaitTime(double seconds);                              // Wait for some 
 int rl_GetFPS(void);                                           // Get current FPS (Buggy and depends on WindowSync)
 
 // Misc. functions
-void rl_SetConfigFlags(int flags);														 // Setup init configuration flags (view FLAGS)
+void rl_SetConfigFlags(int flags);                             // Setup init configuration flags (view FLAGS)
 
 // Input-related functions: mouse
 int rl_GetMouseX(void);                                        // Get mouse position X
