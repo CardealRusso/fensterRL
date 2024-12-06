@@ -6,13 +6,13 @@ int main(void) {
   rl_InitWindow(800, 600, "White Noise Example");
 
   while (true) {
-    rl_WindowEventLoop();
+    rl_PollInputEvents();
     if (rl_IsCloseRequested()) {
       printf("bye\n");
       break;
     }
 
-    printf("%d\n",rl_GetMouseX());
+    printf("%d\n",rl_GetFPS());
     rl_SetWindowTitle("test");
     for (int y = 0; y < rl_GetWindowHeight(); y++) {
       for (int x = 0; x < rl_GetWindowWidth(); x++) {
@@ -23,7 +23,7 @@ int main(void) {
     rl_RenderFrame();
 
     if (rl_IsWindowFocused()) {
-      rl_WindowSync(60);
+      rl_WindowSync(300);
     } else {
       //printf("Reduced FPS while the window is not in focus to save a bit of cpu cycling.\n");
       rl_WindowSync(5);

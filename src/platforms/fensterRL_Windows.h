@@ -113,7 +113,7 @@ static void PlatformInitWindow(const char* title) {
   UpdateWindow(platform->hwnd);
 }
 
-static void PlatformWindowEventLoop(void) {
+static void PlatformPollInputEvents(void) {
   MSG msg;
   fenster.hasCloseRequest = false;
   fenster.hasResized = false;
@@ -159,15 +159,15 @@ static void PlatformCloseWindow(void) {
   fenster.platformData = NULL;
 }
 
-static void PlatformSleep(long microseconds) {
-  Sleep(microseconds / 1000);
+static void PlatformSleep(int64_t microseconds) {
+  Sleep(microseconds);
 }
 
-static double PlatformGetTime(void) {
+static int64_t PlatformGetTime(void) {
   LARGE_INTEGER freq, count;
   QueryPerformanceFrequency(&freq);
   QueryPerformanceCounter(&count);
-  return (double)count.QuadPart / freq.QuadPart;
+  return (int64_t)(count.QuadPart * 1000.0 / freq.QuadPart);
 }
 
 static void PlatformSetWindowTitle(const char* title) {

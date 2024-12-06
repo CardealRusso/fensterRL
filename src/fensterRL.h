@@ -18,6 +18,7 @@ static struct {
   int screenWidth, screenHeight;
   int windowPosX, windowPosY;
   int mousePosition[2];
+  int fps;
 } fenster = {0};
 
 #ifdef __linux__
@@ -60,26 +61,30 @@ uint32_t rl_GetPixel(int x, int y) {
   if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
     return fenster.buffer[y * fenster.width + x];
   }
-  return 0; // Return 0 (black) if the coordinates are out of bounds
+  return 0;
 }
 
 static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
   return fenster.buffer[y * fenster.width + x];
 }
 
-void rl_WindowEventLoop(void) {
-  PlatformWindowEventLoop();
+void rl_PollInputEvents(void) {
+  PlatformPollInputEvents();
 }
 
 void rl_WindowSync(int fps) {
   if (fps > 0) {
-    double targetFrameTime = 1.0 / fps;
-    double currentTime = PlatformGetTime();
-    double elapsed = currentTime - fenster.lastFrameTime;
+    int64_t targetFrameTime = 1000 / fps;
+    int64_t currentTime = PlatformGetTime();
+    int64_t elapsed = currentTime - fenster.lastFrameTime;
 
     if (elapsed < targetFrameTime) {
-      PlatformSleep((targetFrameTime - elapsed) * 1000000);
+      PlatformSleep(targetFrameTime - elapsed);
       currentTime = PlatformGetTime();
+    }
+
+    if (elapsed > 0) {
+      fenster.fps = 1000 / elapsed;
     }
 
     fenster.lastFrameTime = currentTime;
@@ -155,4 +160,16 @@ int rl_GetMouseX(void) {
 int rl_GetMouseY(void) {
   return fenster.mousePosition[1];
 }
+
+void rl_WaitTime(double seconds) {
+  if (seconds > 0) {
+    int64_t ms = (int64_t)(seconds * 1000.0);
+    PlatformSleep(ms);
+  }
+}
+
+int rl_GetFPS(void) {
+  return fenster.fps;
+}
+
 #endif // FENSTERRL_H

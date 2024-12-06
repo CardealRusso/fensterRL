@@ -171,17 +171,20 @@ static void PlatformInitWindow(const char* title) {
 }
 
 
-static double PlatformGetTime(void) {
+static void PlatformSleep(int64_t ms) {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec / 1000000000.0;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+    nanosleep(&ts, NULL);
 }
 
-static void PlatformSleep(long microseconds) {
-    usleep(microseconds);
+static int64_t PlatformGetTime(void) {
+    struct timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return time.tv_sec * 1000 + (time.tv_nsec / 1000000);
 }
 
-static void PlatformWindowEventLoop(void) {
+static void PlatformPollInputEvents(void) {
     fenster.hasCloseRequest = false;
     fenster.hasResized = false;
 

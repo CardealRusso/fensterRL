@@ -14,17 +14,17 @@ typedef struct {
     Atom wm_delete_window;
 } PlatformData;
 
-static void PlatformSleep(long microseconds) {
+static void PlatformSleep(int64_t ms) {
     struct timespec ts;
-    ts.tv_sec = microseconds / 1000000;
-    ts.tv_nsec = (microseconds % 1000000) * 1000;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
 }
 
-static double PlatformGetTime(void) {
+static int64_t PlatformGetTime(void) {
     struct timespec time;
     clock_gettime(CLOCK_MONOTONIC, &time);
-    return time.tv_sec + time.tv_nsec / 1000000000.0;
+    return time.tv_sec * 1000 + (time.tv_nsec / 1000000);
 }
 
 static void PlatformInitWindow(const char* title) {
@@ -95,7 +95,7 @@ static void PlatformInitWindow(const char* title) {
     XFlush(platform->display);
 }
 
-static void PlatformWindowEventLoop(void) {
+static void PlatformPollInputEvents(void) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     XEvent event;
     fenster.hasCloseRequest = false;
