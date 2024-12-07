@@ -36,8 +36,16 @@ int rl_GetFPS(void);                                           // Get current FP
 void rl_SetConfigFlags(int flags);                             // Setup init configuration flags (view FLAGS)
 
 // Input-related functions: mouse
-bool rl_IsMouseButtonPressed(int button);                         // Check if a mouse button has been pressed once
-bool rl_IsMouseButtonDown(int button);                            // Check if a mouse button is being pressed
+bool rl_IsMouseButtonPressed(int button);                      // Check if a mouse button has been pressed once
+bool rl_IsMouseButtonDown(int button);                         // Check if a mouse button is being pressed
 int rl_GetMouseX(void);                                        // Get mouse position X
 int rl_GetMouseY(void);                                        // Get mouse position Y
+```
+
+```C
+//-DUSE_FONTS (needs -lm)
+const char** rl_GetSystemFonts(void);                          // Returns found system fonts (ttf)
+void rl_DrawText(const char* text, int posX, int posY, 
+                 int fontSize, const char* fontPath, 
+                 uint32_t color, uint32_t bgcolor)             // Draw text. Use 0xFFFFFFFF for transparent background
 ```

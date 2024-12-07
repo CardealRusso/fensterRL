@@ -8,6 +8,8 @@
 #include <string.h>
 
 #define FLAG_WINDOW_RESIZABLE (1 << 0)
+#define RL_RAYWHITE  0xf5f5f5                           // raylib logo
+#define RL_LIGHTGRAY 0xc8c8c8                           // Light Gray
 
 static struct {
   int width;
@@ -192,4 +194,9 @@ bool rl_IsMouseButtonPressed(int button) {
 bool rl_IsMouseButtonDown(int button) {
   return fenster.mouseButtonsHold[button];
 }
+
+#ifdef USE_FONTS
+#include "fensterRL_fonts.h"
+#endif
+
 #endif // FENSTERRL_H

@@ -12,10 +12,10 @@ else
 	endif
 endif
 
-all: whitenoise
+all: 001_core_basic_window
 
-whitenoise: whitenoise.c ../src/fensterRL.h
-	$(CC) whitenoise.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+001_core_basic_window: 001_core_basic_window.c ../src/fensterRL.h
+	$(CC) 001_core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
 clean:
-	rm -f whitenoise
+	rm -f 001_core_basic_window
