@@ -8,8 +8,32 @@
 #include <string.h>
 
 #define FLAG_WINDOW_RESIZABLE (1 << 0)
-#define RL_RAYWHITE  0xf5f5f5                           // raylib logo
-#define RL_LIGHTGRAY 0xc8c8c8                           // Light Gray
+#define RL_LIGHTGRAY  0xc8c8c8  // Light Gray
+#define RL_GRAY       0x828282  // Gray
+#define RL_DARKGRAY   0x505050  // Dark Gray
+#define RL_YELLOW     0xfdf900  // Yellow
+#define RL_GOLD       0xffcb00  // Gold
+#define RL_ORANGE     0xffa100  // Orange
+#define RL_PINK       0xff6dc2  // Pink
+#define RL_RED        0xe62937  // Red
+#define RL_MAROON     0xbe2137  // Maroon
+#define RL_GREEN      0x00e430  // Green
+#define RL_LIME       0x009e2f  // Lime
+#define RL_DARKGREEN  0x00752c  // Dark Green
+#define RL_SKYBLUE    0x66bfff  // Sky Blue
+#define RL_BLUE       0x0079f1  // Blue
+#define RL_DARKBLUE   0x0052ac  // Dark Blue
+#define RL_PURPLE     0xc87aff  // Purple
+#define RL_VIOLET     0x873cbe  // Violet
+#define RL_DARKPURPLE 0x701f7e  // Dark Purple
+#define RL_BEIGE      0xd3b083  // Beige
+#define RL_BROWN      0x7f6a4f  // Brown
+#define RL_DARKBROWN  0x4c3f2f  // Dark Brown
+#define RL_WHITE      0xffffff  // White
+#define RL_BLACK      0x000000  // Black
+#define RL_BLANK      0x000000  // Blank (Transparent)
+#define RL_MAGENTA    0xff00ff  // Magenta
+#define RL_RAYWHITE   0xf5f5f5  // My own White (raylib logo)
 
 static struct {
   int width;

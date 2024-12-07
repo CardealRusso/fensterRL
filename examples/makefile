@@ -12,10 +12,13 @@ else
 	endif
 endif
 
-all: 001_core_basic_window
+all: 001_core_basic_window 002_core_basic_screen_manager
 
 001_core_basic_window: 001_core_basic_window.c ../src/fensterRL.h
 	$(CC) 001_core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
+002_core_basic_screen_manager: 002_core_basic_screen_manager.c ../src/fensterRL.h
+	$(CC) 002_core_basic_screen_manager.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+
 clean:
-	rm -f 001_core_basic_window
+	rm -f 001_core_basic_window 002_core_basic_screen_manager
