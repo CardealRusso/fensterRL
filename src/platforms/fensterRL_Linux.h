@@ -61,7 +61,7 @@ static void PlatformInitWindow(const char* title) {
 
     XSelectInput(platform->display, platform->window, 
         ExposureMask | KeyPressMask | StructureNotifyMask | 
-        (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask | PointerMotionMask
+        (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask
     );
     
     platform->gc = XCreateGC(platform->display, platform->window, 0, NULL);
@@ -167,6 +167,22 @@ static void PlatformPollInputEvents(void) {
                 fenster.mousePosition[0]  = event.xmotion.x;
                 fenster.mousePosition[1] = event.xmotion.y;
                 break;
+    case ButtonPress:
+      switch (event.xbutton.button) {
+        case Button1: fenster.mouseButtonsPressed[0] = fenster.mouseButtonsHold[0] = true; break;
+        case Button3: fenster.mouseButtonsPressed[1] = fenster.mouseButtonsHold[1] = true; break;
+        case Button2: fenster.mouseButtonsPressed[2] = fenster.mouseButtonsHold[2] = true; break;
+        case Button4: fenster.mouseButtonsPressed[3] = true; break;
+        case Button5: fenster.mouseButtonsPressed[4] = true; break;
+      }
+      break;
+    case ButtonRelease:
+      switch (event.xbutton.button) {
+        case Button1: fenster.mouseButtonsHold[0] = false; break;
+        case Button3: fenster.mouseButtonsHold[1] = false; break;
+        case Button2: fenster.mouseButtonsHold[2] = false;  break;
+      }
+      break;
             
         }
     }

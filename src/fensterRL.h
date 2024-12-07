@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define FLAG_WINDOW_RESIZABLE (1 << 0)
 
@@ -18,6 +19,8 @@ static struct {
   int screenWidth, screenHeight;
   int windowPosX, windowPosY;
   int mousePosition[2];
+  bool mouseButtonsPressed[5];
+  bool mouseButtonsHold[3];
   int fps;
 } fenster = {0};
 
@@ -70,6 +73,7 @@ static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
 }
 
 void rl_PollInputEvents(void) {
+  memset(fenster.mouseButtonsPressed, 0, sizeof(fenster.mouseButtonsPressed));
   PlatformPollInputEvents();
 }
 
@@ -179,5 +183,13 @@ void rl_ToggleFullscreen(void) {
 
 bool rl_IsWindowFullscreen(void) {
   return fenster.isFullScreen;
+}
+
+bool rl_IsMouseButtonPressed(int button) {
+  return fenster.mouseButtonsPressed[button];
+}
+
+bool rl_IsMouseButtonDown(int button) {
+  return fenster.mouseButtonsHold[button];
 }
 #endif // FENSTERRL_H

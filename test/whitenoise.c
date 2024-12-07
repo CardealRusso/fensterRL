@@ -5,7 +5,6 @@ int main(void) {
   rl_SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   rl_InitWindow(800, 600, "White Noise Example");
 
-  rl_ToggleFullscreen();
   while (true) {
     rl_PollInputEvents();
     if (rl_IsCloseRequested()) {
@@ -13,7 +12,9 @@ int main(void) {
       break;
     }
 
-    printf("%d\n",rl_GetFPS());
+    if (rl_IsMouseButtonDown(1)) {
+      printf("pressionado\n");
+    }
     rl_SetWindowTitle("test");
     for (int y = 0; y < rl_GetWindowHeight(); y++) {
       for (int x = 0; x < rl_GetWindowWidth(); x++) {

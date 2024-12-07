@@ -36,6 +36,8 @@ int rl_GetFPS(void);                                           // Get current FP
 void rl_SetConfigFlags(int flags);                             // Setup init configuration flags (view FLAGS)
 
 // Input-related functions: mouse
+bool rl_IsMouseButtonPressed(int button);                         // Check if a mouse button has been pressed once
+bool rl_IsMouseButtonDown(int button);                            // Check if a mouse button is being pressed
 int rl_GetMouseX(void);                                        // Get mouse position X
 int rl_GetMouseY(void);                                        // Get mouse position Y
 ```

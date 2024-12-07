@@ -19,6 +19,31 @@ static WINDOWPLACEMENT g_wpPrev = {
 
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
+case WM_LBUTTONDOWN:
+    fenster.mouseButtonsPressed[0] = fenster.mouseButtonsHold[0] = true;
+    return 0;
+case WM_LBUTTONUP:
+    fenster.mouseButtonsHold[0] = false;
+    return 0;
+case WM_RBUTTONDOWN:
+    fenster.mouseButtonsPressed[1] = fenster.mouseButtonsHold[1] = true;
+    return 0;
+case WM_RBUTTONUP:
+    fenster.mouseButtonsHold[1] = false;
+    return 0;
+case WM_MBUTTONDOWN:
+    fenster.mouseButtonsPressed[2] = fenster.mouseButtonsHold[2] = true;
+    return 0;
+case WM_MBUTTONUP:
+    fenster.mouseButtonsHold[2] = false;
+    return 0;
+case WM_MOUSEWHEEL:
+    if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) {
+        fenster.mouseButtonsPressed[3] = true;
+    } else {
+        fenster.mouseButtonsPressed[4] = true;
+    }
+    return 0;
     case WM_CLOSE:
       fenster.hasCloseRequest = true;
       return 0;

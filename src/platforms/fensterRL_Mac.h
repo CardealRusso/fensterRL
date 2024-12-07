@@ -199,15 +199,48 @@ static void PlatformPollInputEvents(void) {
         YES
     );
 
-    if (event) {
-        NSUInteger evtype = OBJC_CALL(NSUInteger, event, "type");
-        if (evtype == 5 || evtype == 6) { // NSEventTypeMouseMoved
+if (event) {
+    NSUInteger evtype = OBJC_CALL(NSUInteger, event, "type");
+    switch (evtype) {
+        case 1: /* NSEventTypeLeftMouseDown */
+            fenster.mouseButtonsPressed[0] = fenster.mouseButtonsHold[0] = true;
+            break;
+        case 2: /* NSEventTypeLeftMouseUp */
+            fenster.mouseButtonsHold[0] = false;
+            break;
+        case 3: /* NSEventTypeRightMouseDown */
+            fenster.mouseButtonsPressed[1] = fenster.mouseButtonsHold[1] = true;
+            break;
+        case 4: /* NSEventTypeRightMouseUp */
+            fenster.mouseButtonsHold[1] = false;
+            break;
+        case 25: /* NSEventTypeOtherMouseDown */
+            fenster.mouseButtonsPressed[2] = fenster.mouseButtonsHold[2] = true;
+            break;
+        case 26: /* NSEventTypeOtherMouseUp */
+            fenster.mouseButtonsHold[2] = false;
+            break;
+        case 22: { /* NSEventTypeScrollWheel */
+            CGFloat deltaY = OBJC_CALL(CGFloat, event, "scrollingDeltaY");
+            if (deltaY > 0) {
+                fenster.mouseButtonsPressed[3] = true;
+            } else if (deltaY < 0) {
+                fenster.mouseButtonsPressed[4] = true;
+            }
+            break;
+        }
+        case 5: /* NSEventTypeMouseMoved */
+        case 6: { /* NSEventTypeMouseMoved */
             CGPoint xy = OBJC_CALL(CGPoint, event, "locationInWindow");
             fenster.mousePosition[0] = (int)xy.x;
-            fenster.mousePosition[1] = (int)(fenster.mousePosition[1] - xy.y);
+            fenster.mousePosition[1] = (int)(fenster.height - xy.y);
+            break;
         }
-        OBJC_CALL(void, NSApp, "sendEvent:", event);
+        default:
+            break;
     }
+    OBJC_CALL(void, NSApp, "sendEvent:", event);
+}
 }
 
 static void PlatformRenderFrame(void) {
