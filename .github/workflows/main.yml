@@ -1,4 +1,4 @@
-name: Compile example
+name: Compile and Test Example
 
 on:
   push:
@@ -8,17 +8,67 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-    runs-on: ${{ matrix.os }}
-
+  linux:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-    - name: Compile examples
-      run: make -C test/
-      shell: bash
+      - name: Compile examples
+        run: make -C test/
+        shell: bash
+
+  macos:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install required packages
+        run: brew install imagemagick
+
+      - name: Compile examples
+        run: make -C test/
+        shell: bash
+
+      - name: Run whitenoise and capture screenshot
+        run: |
+          ./test/whitenoise &
+          sleep 5
+          screencapture -x /tmp/screenshot.png
+        shell: bash
+
+      - name: Upload screenshot as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-screenshot
+          path: /tmp/screenshot.png
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install required packages
+        run: choco install ffmpeg
+
+      - name: Compile examples
+        run: make -C test/
+        shell: bash
+
+      - name: Run whitenoise and capture screenshot
+        run: |
+          start ./test/whitenoise
+          sleep 1
+          ffmpeg -f gdigrab -i desktop -frames:v 1 C:\screenshot.png
+        shell: bash
+
+      - name: Upload screenshot as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-screenshot
+          path: C:\screenshot.png
