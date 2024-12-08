@@ -40,6 +40,10 @@ bool rl_IsMouseButtonPressed(int button);                      // Check if a mou
 bool rl_IsMouseButtonDown(int button);                         // Check if a mouse button is being pressed
 int rl_GetMouseX(void);                                        // Get mouse position X
 int rl_GetMouseY(void);                                        // Get mouse position Y
+
+// Input-related functions: keyboard
+bool rl_IsKeyPressed(int key);                                 // Check if a key has been pressed once
+bool rl_IsKeyDown(int key);                                    // Check if a key is being pressed
 ```
 
 ```C

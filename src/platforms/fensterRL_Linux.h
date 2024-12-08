@@ -60,7 +60,7 @@ static void PlatformInitWindow(const char* title) {
     platform->wm_fullscreen = XInternAtom(platform->display, "_NET_WM_STATE_FULLSCREEN", False);
 
     XSelectInput(platform->display, platform->window, 
-        ExposureMask | KeyPressMask | StructureNotifyMask | 
+        ExposureMask | KeyPressMask | KeyReleaseMask | StructureNotifyMask | 
         (fenster.isResizable ? 0 : ResizeRedirectMask) | FocusChangeMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask
     );
     
@@ -108,7 +108,8 @@ static void PlatformPollInputEvents(void) {
 
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
-        
+        int scancode = event.xkey.keycode - 8;
+
         switch (event.type) {
             case ClientMessage:
                 if (event.xclient.data.l[0] == (long)platform->wm_delete_window) {
@@ -167,6 +168,14 @@ static void PlatformPollInputEvents(void) {
                 fenster.mousePosition[0]  = event.xmotion.x;
                 fenster.mousePosition[1] = event.xmotion.y;
                 break;
+           case KeyPress:
+               fenster.holdKeys |= (1ULL << scancode);
+               fenster.pressedKeys |= (1ULL << scancode);
+               break;
+
+           case KeyRelease:
+               fenster.holdKeys &= ~(1ULL << scancode);
+               break;
     case ButtonPress:
       switch (event.xbutton.button) {
         case Button1: fenster.mouseButtonsPressed[0] = fenster.mouseButtonsHold[0] = true; break;

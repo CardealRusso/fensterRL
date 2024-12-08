@@ -236,6 +236,17 @@ if (event) {
             fenster.mousePosition[1] = (int)(fenster.height - xy.y);
             break;
         }
+        case 10: { // NSEventTypeKeyDown
+            unsigned short keyCode = OBJC_CALL(unsigned short, event, "keyCode");
+            fenster.holdKeys |= (1ULL << keyCode);
+            fenster.pressedKeys |= (1ULL << keyCode);
+            break;
+        }
+        case 11: { // NSEventTypeKeyUp
+            unsigned short keyCode = OBJC_CALL(unsigned short, event, "keyCode");
+            fenster.holdKeys &= ~(1ULL << keyCode);
+            break;
+        }
         default:
             break;
     }

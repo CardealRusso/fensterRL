@@ -48,6 +48,7 @@ static struct {
   bool mouseButtonsPressed[5];
   bool mouseButtonsHold[3];
   int fps;
+  unsigned long long pressedKeys, holdKeys;
 } fenster = {0};
 
 #ifdef __linux__
@@ -100,6 +101,7 @@ static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
 
 void rl_PollInputEvents(void) {
   memset(fenster.mouseButtonsPressed, 0, sizeof(fenster.mouseButtonsPressed));
+  fenster.pressedKeys = 0;
   PlatformPollInputEvents();
 }
 
@@ -217,6 +219,14 @@ bool rl_IsMouseButtonPressed(int button) {
 
 bool rl_IsMouseButtonDown(int button) {
   return fenster.mouseButtonsHold[button];
+}
+
+bool rl_IsKeyDown(int keycode) {
+  return (fenster.holdKeys & (1ULL << keycode)) != 0;
+}
+
+bool rl_IsKeyPressed(int keycode) {
+  return (fenster.pressedKeys & (1ULL << keycode)) != 0;
 }
 
 #ifdef USE_FONTS

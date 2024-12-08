@@ -5,25 +5,16 @@ int main(void) {
   rl_SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   rl_InitWindow(800, 600, "White Noise Example");
   const char** fonts = rl_GetSystemFonts();
-  const char** fonts2 = rl_GetSystemFonts();
-  if (fonts) {
-    printf("test\n");
-    printf("First font path: %s\n", fonts[0]);
-  }
-  if (fonts2) {
-    printf("test\n");
-    printf("First font path: %s\n", fonts2[0]);
-  }
 
   while (true) {
     rl_PollInputEvents();
-    if (rl_IsCloseRequested()) {
+    if (rl_IsCloseRequested() || rl_IsKeyPressed(1)) {
       printf("bye\n");
       break;
     }
 
-    if (rl_IsMouseButtonDown(1)) {
-      printf("pressionado\n");
+    if (rl_IsKeyPressed(28)) {
+      printf("enter\n");
     }
     rl_SetWindowTitle("test");
     for (int y = 0; y < rl_GetWindowHeight(); y++) {

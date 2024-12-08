@@ -28,7 +28,7 @@ int main(void)
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!rl_IsCloseRequested())    // Detect window close button
+    while (!rl_IsCloseRequested() && !rl_IsKeyPressed(1))    // Detect window close button and ESC key
     {
         rl_PollInputEvents();
         // Draw
