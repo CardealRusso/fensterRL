@@ -51,6 +51,10 @@ static struct {
   unsigned long long pressedKeys, holdKeys;
 } fenster = {0};
 
+typedef struct Vector2 {
+  int x, y;
+} Vector2;
+
 #ifdef __linux__
   #include "platforms/fensterRL_Linux.h"
 #elif defined(_WIN32)
@@ -166,6 +170,10 @@ void rl_SetWindowPosition(int x, int y) {
   PlatformSetWindowPosition(x, y);
 }
 
+void rl_SetWindowPositionV(Vector2 position) {
+  rl_SetWindowPosition(position.x, position.y);
+}
+
 void rl_SetWindowSize(int width, int height) {
   PlatformSetWindowSize(width, height);
 }
@@ -186,12 +194,20 @@ int rl_GetWindowPositionY(void) {
   return fenster.windowPosY;
 }
 
+Vector2 rl_GetWindowPositionV(void) {
+  return (Vector2){ rl_GetWindowPositionX(), rl_GetWindowPositionY() };
+}
+
 int rl_GetMouseX(void) {
   return fenster.mousePosition[0];
 }
 
 int rl_GetMouseY(void) {
   return fenster.mousePosition[1];
+}
+
+Vector2 rl_GetMouseV(void) {
+  return (Vector2){ rl_GetMouseX(), rl_GetMouseY() };
 }
 
 void rl_WaitTime(double seconds) {

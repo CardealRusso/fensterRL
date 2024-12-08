@@ -6,6 +6,7 @@ void rl_PollInputEvents(void);                                 // Register all i
 void rl_RenderFrame(void);                                     // Render the frame
 void rl_SetWindowTitle(const char* title);                     // Set title for window
 void rl_SetWindowPosition(int x, int y);                       // Set window position on screen
+void rl_SetWindowPositionV(Vector2 position)                   // Set window position on screen with Vector2
 void rl_SetWindowSize(int width, int height);                  // Set window dimensions
 void rl_SetWindowFocused(void);                                // Set window focused
 void rl_ToggleFullscreen(void);                                // Toggle window state: fullscreen/windowed, resizes window to match monitor resolution
@@ -15,6 +16,7 @@ bool rl_IsWindowFullscreen(void);                              // Check if windo
 bool rl_IsCloseRequested(void);                                // Check if the close button has been pressed
 int rl_GetWindowPositionX(void);                               // Get window position X on monitor
 int rl_GetWindowPositionY(void);                               // Get window position Y on monitor
+Vector2 rl_GetWindowPositionV(void)                            // Get window position XY on monitor
 int rl_GetWindowWidth(void);                                   // Get current window width
 int rl_GetWindowHeight(void);                                  // Get current window height
 int rl_GetScreenWidth(void);                                   // Get current monitor width
@@ -40,6 +42,7 @@ bool rl_IsMouseButtonPressed(int button);                      // Check if a mou
 bool rl_IsMouseButtonDown(int button);                         // Check if a mouse button is being pressed
 int rl_GetMouseX(void);                                        // Get mouse position X
 int rl_GetMouseY(void);                                        // Get mouse position Y
+Vector2 rl_GetMouseV(void)                                     // Get mouse position XY
 
 // Input-related functions: keyboard
 bool rl_IsKeyPressed(int key);                                 // Check if a key has been pressed once
