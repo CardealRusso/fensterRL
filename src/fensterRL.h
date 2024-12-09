@@ -7,53 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FLAG_WINDOW_RESIZABLE (1 << 0)
-#define RL_LIGHTGRAY  0xc8c8c8  // Light Gray
-#define RL_GRAY       0x828282  // Gray
-#define RL_DARKGRAY   0x505050  // Dark Gray
-#define RL_YELLOW     0xfdf900  // Yellow
-#define RL_GOLD       0xffcb00  // Gold
-#define RL_ORANGE     0xffa100  // Orange
-#define RL_PINK       0xff6dc2  // Pink
-#define RL_RED        0xe62937  // Red
-#define RL_MAROON     0xbe2137  // Maroon
-#define RL_GREEN      0x00e430  // Green
-#define RL_LIME       0x009e2f  // Lime
-#define RL_DARKGREEN  0x00752c  // Dark Green
-#define RL_SKYBLUE    0x66bfff  // Sky Blue
-#define RL_BLUE       0x0079f1  // Blue
-#define RL_DARKBLUE   0x0052ac  // Dark Blue
-#define RL_PURPLE     0xc87aff  // Purple
-#define RL_VIOLET     0x873cbe  // Violet
-#define RL_DARKPURPLE 0x701f7e  // Dark Purple
-#define RL_BEIGE      0xd3b083  // Beige
-#define RL_BROWN      0x7f6a4f  // Brown
-#define RL_DARKBROWN  0x4c3f2f  // Dark Brown
-#define RL_WHITE      0xffffff  // White
-#define RL_BLACK      0x000000  // Black
-#define RL_BLANK      0x000000  // Blank (Transparent)
-#define RL_MAGENTA    0xff00ff  // Magenta
-#define RL_RAYWHITE   0xf5f5f5  // My own White (raylib logo)
-
-static struct {
-  int width;
-  int height;
-  uint32_t* buffer;
-  double lastFrameTime;
-  bool isResizable, hasResized, isFocused, hasCloseRequest, isFullScreen;
-  void* platformData;
-  int screenWidth, screenHeight;
-  int windowPosX, windowPosY;
-  int mousePosition[2];
-  bool mouseButtonsPressed[5];
-  bool mouseButtonsHold[3];
-  int fps;
-  unsigned long long pressedKeys, holdKeys;
-} fenster = {0};
-
-typedef struct Vector2 {
-  int x, y;
-} Vector2;
+#include "fensterRL_macros.h"
+#include "fensterRL_struct.h"
 
 #ifdef __linux__
   #include "platforms/fensterRL_Linux.h"
@@ -76,36 +31,9 @@ void rl_InitWindow(int width, int height, const char* title) {
   PlatformInitWindow(title);
 }
 
-void rl_ClearBackground(uint32_t color) {
-  for (int i = 0; i < fenster.width * fenster.height; i++) {
-    fenster.buffer[i] = color;
-  }
-}
-
-void rl_SetPixel(int x, int y, uint32_t color) {
-  if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
-    fenster.buffer[y * fenster.width + x] = color;
-  }
-}
-
-static inline void rl_SetPixelUnsafe(int x, int y, uint32_t color) {
-    fenster.buffer[y * fenster.width + x] = color;
-}
-
-uint32_t rl_GetPixel(int x, int y) {
-  if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
-    return fenster.buffer[y * fenster.width + x];
-  }
-  return 0;
-}
-
-static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
-  return fenster.buffer[y * fenster.width + x];
-}
-
 void rl_PollInputEvents(void) {
   memset(fenster.mouseButtonsPressed, 0, sizeof(fenster.mouseButtonsPressed));
-  fenster.pressedKeys = 0;
+  memset(fenster.pressedKeys, 0, sizeof(fenster.pressedKeys));
   PlatformPollInputEvents();
 }
 
@@ -238,12 +166,16 @@ bool rl_IsMouseButtonDown(int button) {
 }
 
 bool rl_IsKeyDown(int keycode) {
-  return (fenster.holdKeys & (1ULL << keycode)) != 0;
+  return fenster.holdKeys[keycode];
 }
 
 bool rl_IsKeyPressed(int keycode) {
-  return (fenster.pressedKeys & (1ULL << keycode)) != 0;
+  return fenster.pressedKeys[keycode];
 }
+
+#ifdef USE_SHAPES
+#include "fensterRL_shapes.h"
+#endif
 
 #ifdef USE_FONTS
 #include "fensterRL_fonts.h"

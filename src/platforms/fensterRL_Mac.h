@@ -110,8 +110,6 @@ static void WindowDidResize(id self, SEL cmd, id notification) {
 }
 
 static void DrawRect(id self, SEL cmd, CGRect r) {
-    fprintf(stderr, "DrawRect called: width=%d, height=%d, buffer=%p\n", 
-            fenster.width, fenster.height, (void*)fenster.buffer);
     (void)r, (void)cmd, (void)self;
     CGContextRef context = msg(CGContextRef, msg(id, cls("NSGraphicsContext"), "currentContext"), "graphicsPort");
     CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
@@ -177,13 +175,13 @@ case 22: { /* NSEventTypeScrollWheel */
             }
             case 10: { // NSEventTypeKeyDown
                 unsigned short keyCode = msg(unsigned short, event, "keyCode");
-                fenster.holdKeys |= (1ULL << keyCode);
-                fenster.pressedKeys |= (1ULL << keyCode);
+                fenster.holdKeys[keyCode] = true;
+                fenster.pressedKeys[keyCode] = true;
                 break;
             }
             case 11: { // NSEventTypeKeyUp
                 unsigned short keyCode = msg(unsigned short, event, "keyCode");
-                fenster.holdKeys &= ~(1ULL << keyCode);
+                fenster.holdKeys[keyCode] = false;
                 break;
             }
             default:

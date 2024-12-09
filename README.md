@@ -22,13 +22,6 @@ int rl_GetWindowHeight(void);                                  // Get current wi
 int rl_GetScreenWidth(void);                                   // Get current monitor width
 int rl_GetScreenHeight(void);                                  // Get current monitor height
 
-// Drawing-related functions
-void rl_ClearBackground(uint32_t color);                       // Set background color
-void rl_SetPixel(int x, int y, uint32_t color);                // Draw a pixel
-void rl_SetPixelUnsafe(int x, int y, uint32_t color);          // Draw a pixel (Faster and unsafe)
-uint32_t rl_GetPixel(int x, int y);                            // Get a pixel color (returns 0 if out of bounds)
-uint32_t rl_GetPixelUnsafe(int x, int y);                      // Get a pixel color (Faster and unsafe)
-
 // Timing-related functions
 void rl_WindowSync(int fps);                                   // The program will sleep to achieve this fps
 void rl_WaitTime(double seconds);                              // Wait for some time (halt program execution)
@@ -50,9 +43,25 @@ bool rl_IsKeyDown(int key);                                    // Check if a key
 ```
 
 ```C
-//-DUSE_FONTS (needs -lm)
+// -DUSE_FONTS (needs -lm)
 const char** rl_GetSystemFonts(void);                          // Returns found system fonts (ttf)
 void rl_DrawText(const char* text, int posX, int posY, 
                  int fontSize, const char* fontPath, 
                  uint32_t color, uint32_t bgcolor)             // Draw text. Use 0xFFFFFFFF for transparent background
+```
+
+```C
+// -DUSE_SHAPES
+// Optional: -DUSE_SIMD (needs -mavx2 (x86), neon for arm)
+
+// Pixels
+void rl_DrawPixel(int posX, int posY, uint32_t color)                                                // Draw a pixel
+void rl_DrawPixelV(Vector2 position, uint32_t color)                                                 // Draw a pixel Vector version
+
+// Drawing-related functions
+void rl_LinearBufferFill(size_t offset, size_t count, uint32_t color)                                // Unsafe linear color fill (SIMD-accelerated, uses memset for color 0)
+void rl_ClearBackground(uint32_t color);                                                             // Set background color (SIMD-accelerated)
+
+// Lines
+void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color)             // Draw a line (SIMD-accelerated for horizontal lines)
 ```

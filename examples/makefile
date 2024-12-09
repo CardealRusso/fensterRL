@@ -1,4 +1,4 @@
-CFLAGS ?= -DUSE_FONTS -lm -O3 -s -flto -Wall -Wextra -std=gnu99
+CFLAGS ?= -DUSE_SHAPES -DUSE_FONTS -lm -O3 -s -flto -Wall -Wextra -std=gnu99
 
 ifeq ($(OS),Windows_NT)
 	CC = gcc
@@ -12,13 +12,14 @@ else
 	endif
 endif
 
-all: 001_core_basic_window 002_core_basic_screen_manager
+SRC_DIR = .
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+TARGETS = $(SRCS:%.c=%)
 
-001_core_basic_window: 001_core_basic_window.c ../src/fensterRL.h
-	$(CC) 001_core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+all: $(TARGETS)
 
-002_core_basic_screen_manager: 002_core_basic_screen_manager.c ../src/fensterRL.h
-	$(CC) 002_core_basic_screen_manager.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+%: %.c ../src/fensterRL.h
+	$(CC) $< -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
 clean:
-	rm -f 001_core_basic_window 002_core_basic_screen_manager
+	rm -f $(TARGETS)

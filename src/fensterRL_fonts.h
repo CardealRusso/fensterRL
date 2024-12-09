@@ -237,9 +237,9 @@ void rl_DrawText(const char* text, int posX, int posY, int fontSize,
                 int py = y + glyph->y0 + i;
                 if (px >= 0 && px < fenster.width && py >= 0 && py < fenster.height) {
                     if (glyph->bitmap[i * glyph->width + j] > 127) {
-                        rl_SetPixel(px, py, color);
+                        rl_DrawPixel(px, py, color);
                     } else if (bgcolor != 0xFFFFFFFF) {
-                        rl_SetPixel(px, py, bgcolor);
+                        rl_DrawPixel(px, py, bgcolor);
                     }
                 }
             }
