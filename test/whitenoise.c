@@ -26,7 +26,7 @@ int main(void) {
 
     // Exemplo 1: Desenhando um setor de círculo (preenchido)
     // Setor de 90 graus, entre 0 e 90 graus
-    rl_DrawCircleSector(center, 100, 0, 350, 100, red);
+    rl_DrawCircleSector(center, 100, 0, 150, 100, red);
 
     rl_DrawCircleGradient(150, 200, 50, blue, yellow);
 

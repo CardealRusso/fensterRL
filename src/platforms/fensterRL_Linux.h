@@ -108,7 +108,6 @@ static void PlatformPollInputEvents(void) {
 
     while (XPending(platform->display)) {
         XNextEvent(platform->display, &event);
-        int scancode = event.xkey.keycode - 8;
 
         switch (event.type) {
             case ClientMessage:
@@ -169,12 +168,12 @@ static void PlatformPollInputEvents(void) {
                 fenster.mousePosition[1] = event.xmotion.y;
                 break;
            case KeyPress:
-               fenster.holdKeys |= (1ULL << scancode);
-               fenster.pressedKeys |= (1ULL << scancode);
+               fenster.holdKeys[event.xkey.keycode - 8] = true;
+               fenster.pressedKeys[event.xkey.keycode - 8] = true;
                break;
 
            case KeyRelease:
-               fenster.holdKeys &= ~(1ULL << scancode);
+               fenster.holdKeys[event.xkey.keycode - 8] = false;
                break;
     case ButtonPress:
       switch (event.xbutton.button) {

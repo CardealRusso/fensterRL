@@ -12,13 +12,16 @@ else
 	endif
 endif
 
-all: 001_core_basic_window 002_core_basic_screen_manager
+all: core_basic_window core_basic_screen_manager core_input_keys
 
-001_core_basic_window: 001_core_basic_window.c ../src/fensterRL.h
-	$(CC) 001_core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+core_basic_window: core_basic_window.c ../src/fensterRL.h
+	$(CC) core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
-002_core_basic_screen_manager: 002_core_basic_screen_manager.c ../src/fensterRL.h
-	$(CC) 002_core_basic_screen_manager.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+core_basic_screen_manager: core_basic_screen_manager.c ../src/fensterRL.h
+	$(CC) core_basic_screen_manager.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+
+core_input_keys: core_input_keys.c ../src/fensterRL.h
+	$(CC) core_input_keys.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
 clean:
-	rm -f 001_core_basic_window 002_core_basic_screen_manager
+	rm -f core_basic_window core_basic_screen_manager core_input_keys

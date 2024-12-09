@@ -127,6 +127,8 @@ void rl_DrawCircleLinesV(Vector2 center, int radius, uint32_t color) {
 }
 
 void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+    
     for (int y = -radius; y <= radius; y++) {
         for (int x = -radius; x <= radius; x++) {
             int dist = x*x + y*y;
@@ -134,8 +136,18 @@ void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngl
                 float angle = atan2(y, x) * 180.0f / M_PI;
                 if (angle < 0) angle += 360;
                 
-                if (angle >= startAngle && angle <= endAngle) {
-                    rl_DrawPixel(center.x + x, center.y + y, color);
+                // Verificar se o ângulo está dentro do setor
+                float sweepAngle = endAngle - startAngle;
+                float segmentAngle = sweepAngle / segments;
+                
+                for (int i = 0; i < segments; i++) {
+                    float segStart = startAngle + i * segmentAngle;
+                    float segEnd = segStart + segmentAngle;
+                    
+                    if (angle >= segStart && angle <= segEnd) {
+                        rl_DrawPixel(center.x + x, center.y + y, color);
+                        break;
+                    }
                 }
             }
         }
@@ -143,6 +155,8 @@ void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngl
 }
 
 void rl_DrawCircleSectorLines(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+    
     for (int y = -radius; y <= radius; y++) {
         for (int x = -radius; x <= radius; x++) {
             int dist = x*x + y*y;
@@ -150,20 +164,48 @@ void rl_DrawCircleSectorLines(Vector2 center, int radius, int startAngle, int en
                 float angle = atan2(y, x) * 180.0f / M_PI;
                 if (angle < 0) angle += 360;
                 
-                if (angle >= startAngle && angle <= endAngle) {
-                    rl_DrawPixel(center.x + x, center.y + y, color);
+                float sweepAngle = endAngle - startAngle;
+                float segmentAngle = sweepAngle / segments;
+                
+                for (int i = 0; i < segments; i++) {
+                    float segStart = startAngle + i * segmentAngle;
+                    float segEnd = segStart + segmentAngle;
+                    
+                    if (angle >= segStart && angle <= segEnd) {
+                        rl_DrawPixel(center.x + x, center.y + y, color);
+                        break;
+                    }
                 }
             }
         }
     }
 }
 
+uint32_t rl_ColorLerp(uint32_t start, uint32_t end, float t) {
+    // Implementação simplificada de interpolação de cor
+    uint8_t r1 = (start >> 16) & 0xFF;
+    uint8_t g1 = (start >> 8) & 0xFF;
+    uint8_t b1 = start & 0xFF;
+
+    uint8_t r2 = (end >> 16) & 0xFF;
+    uint8_t g2 = (end >> 8) & 0xFF;
+    uint8_t b2 = end & 0xFF;
+
+    uint8_t r = r1 + t * (r2 - r1);
+    uint8_t g = g1 + t * (g2 - g1);
+    uint8_t b = b1 + t * (b2 - b1);
+
+    return (r << 16) | (g << 8) | b;
+}
+
 void rl_DrawCircleGradient(int centerX, int centerY, int radius, uint32_t innerColor, uint32_t outerColor) {
     for (int y = -radius; y <= radius; y++) {
         for (int x = -radius; x <= radius; x++) {
-            int dist = x * x + y * y;
-            if (dist <= radius * radius) {
-                uint32_t color = (dist * innerColor + (radius * radius - dist) * outerColor) / (radius * radius);
+            int dist = x*x + y*y;
+            if (dist <= radius*radius) {
+                // Interpolação linear para o gradiente
+                float t = sqrt((float)dist) / radius;
+                uint32_t color = rl_ColorLerp(innerColor, outerColor, t);
                 rl_DrawPixel(centerX + x, centerY + y, color);
             }
         }

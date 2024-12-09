@@ -20,15 +20,15 @@ static WINDOWPLACEMENT g_wpPrev = {
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
 case WM_KEYDOWN: {
-    int scancode = MapVirtualKey(wParam, MAPVK_VK_TO_VSC);
-    fenster.holdKeys |= (1ULL << scancode);
-    fenster.pressedKeys |= (1ULL << scancode);
+    int scancode = (lParam >> 16) & 0xFF;
+    fenster.holdKeys[scancode] = true;
+    fenster.pressedKeys[scancode] = true;
     break;
 }
 
 case WM_KEYUP: {
-    int scancode = MapVirtualKey(wParam, MAPVK_VK_TO_VSC);
-    fenster.holdKeys &= ~(1ULL << scancode);
+    int scancode = (lParam >> 16) & 0xFF;
+    fenster.holdKeys[scancode] = false;
     break;
 }
 case WM_LBUTTONDOWN:
