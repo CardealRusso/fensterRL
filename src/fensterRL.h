@@ -82,27 +82,6 @@ void rl_ClearBackground(uint32_t color) {
   }
 }
 
-void rl_SetPixel(int x, int y, uint32_t color) {
-  if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
-    fenster.buffer[y * fenster.width + x] = color;
-  }
-}
-
-static inline void rl_SetPixelUnsafe(int x, int y, uint32_t color) {
-    fenster.buffer[y * fenster.width + x] = color;
-}
-
-uint32_t rl_GetPixel(int x, int y) {
-  if (x >= 0 && x < fenster.width && y >= 0 && y < fenster.height) {
-    return fenster.buffer[y * fenster.width + x];
-  }
-  return 0;
-}
-
-static inline uint32_t rl_GetPixelUnsafe(int x, int y) {
-  return fenster.buffer[y * fenster.width + x];
-}
-
 void rl_PollInputEvents(void) {
   memset(fenster.mouseButtonsPressed, 0, sizeof(fenster.mouseButtonsPressed));
   fenster.pressedKeys = 0;
@@ -244,6 +223,9 @@ bool rl_IsKeyDown(int keycode) {
 bool rl_IsKeyPressed(int keycode) {
   return (fenster.pressedKeys & (1ULL << keycode)) != 0;
 }
+#ifdef USE_SHAPES
+#include "fensterRL_shapes.h"
+#endif
 
 #ifdef USE_FONTS
 #include "fensterRL_fonts.h"

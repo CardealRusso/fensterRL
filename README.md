@@ -24,10 +24,6 @@ int rl_GetScreenHeight(void);                                  // Get current mo
 
 // Drawing-related functions
 void rl_ClearBackground(uint32_t color);                       // Set background color
-void rl_SetPixel(int x, int y, uint32_t color);                // Draw a pixel
-void rl_SetPixelUnsafe(int x, int y, uint32_t color);          // Draw a pixel (Faster and unsafe)
-uint32_t rl_GetPixel(int x, int y);                            // Get a pixel color (returns 0 if out of bounds)
-uint32_t rl_GetPixelUnsafe(int x, int y);                      // Get a pixel color (Faster and unsafe)
 
 // Timing-related functions
 void rl_WindowSync(int fps);                                   // The program will sleep to achieve this fps
@@ -50,9 +46,34 @@ bool rl_IsKeyDown(int key);                                    // Check if a key
 ```
 
 ```C
-//-DUSE_FONTS (needs -lm)
+// -DUSE_FONTS (needs -lm)
 const char** rl_GetSystemFonts(void);                          // Returns found system fonts (ttf)
 void rl_DrawText(const char* text, int posX, int posY, 
                  int fontSize, const char* fontPath, 
                  uint32_t color, uint32_t bgcolor)             // Draw text. Use 0xFFFFFFFF for transparent background
+```
+
+```C
+// -DUSE_SHAPES (needs -lm)
+// Pixels
+void rl_DrawPixel(int posX, int posY, uint32_t color)                                     // Draw a pixel
+void rl_DrawPixelV(Vector2 position, uint32_t color)                                      // Draw a pixel Vector version
+uint32_t rl_GetPixel(int x, int y)                                                        // Get a pixel color
+uint32_t rl_GetPixelV(Vector2 position)                                                   // Get a pixel color Vector version
+
+//Lines
+void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color)  // Draw a line
+void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color)                       // Draw a line Vector version
+void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)           // Draw a thick line
+void rl_DrawLineStrip(const Vector2 *points, int pointCount, uint32_t color)              // Draw a line sequence
+void rl_DrawLineBezier(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)       // Draw a bezier line using linear interpolation
+
+//Circles
+void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color)                                               // Draw a color-filled circle
+void rl_DrawCircleV(Vector2 center, int radius, uint32_t color)                                                        // Draw a color-filled circle Vector version
+void rl_DrawCircleLines(int centerX, int centerY, int radius, uint32_t color)                                          // Draw circle outline
+void rl_DrawCircleLinesV(Vector2 center, int radius, uint32_t color)                                                   // Draw circle outline Vector version
+void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color)       // Draw a piece of a circle
+void rl_DrawCircleSectorLines(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color)  // Draw circle sector outline
+void rl_DrawCircleGradient(int centerX, int centerY, int radius, uint32_t innerColor, uint32_t outerColor)             // Draw a gradient-filled circle
 ```

@@ -8,20 +8,29 @@ int main(void) {
 
   while (true) {
     rl_PollInputEvents();
+    rl_ClearBackground(RL_RAYWHITE);
     if (rl_IsCloseRequested() || rl_IsKeyPressed(1)) {
       printf("bye\n");
       break;
     }
-
     if (rl_IsKeyPressed(28)) {
       printf("enter\n");
     }
+    uint32_t red = 0xFF0000FF;
+    uint32_t green = 0x00FF00FF;
+    uint32_t blue = 0x0000FFFF;
+    uint32_t yellow = 0xFFFF00FF;
+
+    // Posição central
+    Vector2 center = {400, 300};
+
+    // Exemplo 1: Desenhando um setor de círculo (preenchido)
+    // Setor de 90 graus, entre 0 e 90 graus
+    rl_DrawCircleSector(center, 100, 0, 350, 100, red);
+
+    rl_DrawCircleGradient(150, 200, 50, blue, yellow);
+
     rl_SetWindowTitle("test");
-    for (int y = 0; y < rl_GetWindowHeight(); y++) {
-      for (int x = 0; x < rl_GetWindowWidth(); x++) {
-        rl_SetPixel(x, y, rand());
-      }
-    }
 
     rl_DrawText("test", 0, 0, 32, fonts[0], 0, 0xFFFFFFFF);
     rl_RenderFrame();
