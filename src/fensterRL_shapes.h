@@ -184,15 +184,12 @@ uint32_t rl_ColorLerp(uint32_t start, uint32_t end, float t) {
     uint8_t r1 = (start >> 16) & 0xFF;
     uint8_t g1 = (start >> 8) & 0xFF;
     uint8_t b1 = start & 0xFF;
-
     uint8_t r2 = (end >> 16) & 0xFF;
     uint8_t g2 = (end >> 8) & 0xFF;
     uint8_t b2 = end & 0xFF;
-
     uint8_t r = r1 + t * (r2 - r1);
     uint8_t g = g1 + t * (g2 - g1);
     uint8_t b = b1 + t * (b2 - b1);
-
     return (r << 16) | (g << 8) | b;
 }
 
@@ -326,4 +323,298 @@ void rl_DrawRingStriped(Vector2 center, int innerRadius, int outerRadius, int st
         rl_DrawLineV(innerPoint, outerPoint, color);
     }
 }
+
+void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color) {
+    for (int y = posY; y < posY + height; y++) {
+        for (int x = posX; x < posX + width; x++) {
+            rl_DrawPixel(x, y, color);
+        }
+    }
+}
+
+void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color) {
+    rl_DrawRectangle(position.x, position.y, size.x, size.y, color);
+}
+
+void rl_DrawRectangleRec(Rectangle rec, uint32_t color) {
+    rl_DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
+}
+
+void rl_DrawRectangleGradientV(int posX, int posY, int width, int height, uint32_t topColor, uint32_t bottomColor) {
+    for (int y = 0; y < height; y++) {
+        float t = (float)y / height;
+        uint32_t interpolatedColor = rl_ColorLerp(topColor, bottomColor, t);
+        for (int x = 0; x < width; x++) {
+            rl_DrawPixel(posX + x, posY + y, interpolatedColor);
+        }
+    }
+}
+
+void rl_DrawRectangleGradientH(int posX, int posY, int width, int height, uint32_t leftColor, uint32_t rightColor) {
+    for (int x = 0; x < width; x++) {
+        float t = (float)x / width;
+        uint32_t interpolatedColor = rl_ColorLerp(leftColor, rightColor, t);
+        for (int y = 0; y < height; y++) {
+            rl_DrawPixel(posX + x, posY + y, interpolatedColor);
+        }
+    }
+}
+
+void rl_DrawRectangleGradientEx(Rectangle rec, uint32_t topLeftColor, uint32_t bottomLeftColor, 
+                                 uint32_t topRightColor, uint32_t bottomRightColor) {
+    for (int y = 0; y < rec.height; y++) {
+        float yLerp = (float)y / rec.height;
+        
+        // Interpolate left and right colors for this row
+        uint32_t leftRowColor = rl_ColorLerp(topLeftColor, bottomLeftColor, yLerp);
+        uint32_t rightRowColor = rl_ColorLerp(topRightColor, bottomRightColor, yLerp);
+        
+        for (int x = 0; x < rec.width; x++) {
+            float xLerp = (float)x / rec.width;
+            uint32_t pixelColor = rl_ColorLerp(leftRowColor, rightRowColor, xLerp);
+            rl_DrawPixel(rec.x + x, rec.y + y, pixelColor);
+        }
+    }
+}
+
+void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color) {
+    rl_DrawLine(posX, posY, posX + width, posY, color);
+    rl_DrawLine(posX, posY + height, posX + width, posY + height, color);
+    
+    rl_DrawLine(posX, posY, posX, posY + height, color);
+    rl_DrawLine(posX + width, posY, posX + width, posY + height, color);
+}
+
+void rl_DrawRectangleLinesEx(Rectangle rec, int lineThick, uint32_t color) {
+    for (int i = 0; i < lineThick; i++) {
+        rl_DrawRectangleLines(
+            rec.x + i, 
+            rec.y + i, 
+            rec.width - 2*i, 
+            rec.height - 2*i, 
+            color
+        );
+    }
+}
+
+void rl_DrawRectangleRounded(Rectangle rec, float roundness, int segments, uint32_t color) {
+    // Ensure roundness is between 0 and 1
+    roundness = roundness > 1.0f ? 1.0f : (roundness < 0.0f ? 0.0f : roundness);
+    
+    // Calculate corner radius based on smallest dimension
+    int cornerRadius = (int)((rec.width < rec.height ? rec.width : rec.height) * roundness * 0.5f);
+    
+    // If roundness is too small, draw a regular rectangle
+    if (cornerRadius <= 0) {
+        rl_DrawRectangleRec(rec, color);
+        return;
+    }
+    
+    // Center points for each corner
+    Vector2 topLeftCenter = {rec.x + cornerRadius, rec.y + cornerRadius};
+    Vector2 topRightCenter = {rec.x + rec.width - cornerRadius, rec.y + cornerRadius};
+    Vector2 bottomRightCenter = {rec.x + rec.width - cornerRadius, rec.y + rec.height - cornerRadius};
+    Vector2 bottomLeftCenter = {rec.x + cornerRadius, rec.y + rec.height - cornerRadius};
+    
+    // Fill the central rectangular area
+    rl_DrawRectangle(
+        rec.x + cornerRadius, 
+        rec.y, 
+        rec.width - 2 * cornerRadius, 
+        rec.height, 
+        color
+    );
+    rl_DrawRectangle(
+        rec.x, 
+        rec.y + cornerRadius, 
+        rec.width, 
+        rec.height - 2 * cornerRadius, 
+        color
+    );
+    
+    // Draw filled circular sectors for corners
+    rl_DrawCircleSector((Vector2){topLeftCenter.x, topLeftCenter.y}, cornerRadius, 180, 270, segments, color);
+    rl_DrawCircleSector((Vector2){topRightCenter.x, topRightCenter.y}, cornerRadius, 270, 360, segments, color);
+    rl_DrawCircleSector((Vector2){bottomRightCenter.x, bottomRightCenter.y}, cornerRadius, 0, 90, segments, color);
+    rl_DrawCircleSector((Vector2){bottomLeftCenter.x, bottomLeftCenter.y}, cornerRadius, 90, 180, segments, color);
+}
+
+void rl_DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, uint32_t color) {
+    // Ensure roundness is between 0 and 1
+    roundness = roundness > 1.0f ? 1.0f : (roundness < 0.0f ? 0.0f : roundness);
+    
+    // Calculate corner radius based on smallest dimension
+    int cornerRadius = (int)((rec.width < rec.height ? rec.width : rec.height) * roundness * 0.5f);
+    
+    // If roundness is too small, draw a regular rectangle outline
+    if (cornerRadius <= 0) {
+        rl_DrawRectangleLines(rec.x, rec.y, rec.width, rec.height, color);
+        return;
+    }
+    
+    // Center points for each corner
+    Vector2 topLeftCenter = {rec.x + cornerRadius, rec.y + cornerRadius};
+    Vector2 topRightCenter = {rec.x + rec.width - cornerRadius, rec.y + cornerRadius};
+    Vector2 bottomRightCenter = {rec.x + rec.width - cornerRadius, rec.y + rec.height - cornerRadius};
+    Vector2 bottomLeftCenter = {rec.x + cornerRadius, rec.y + rec.height - cornerRadius};
+    
+    // Draw corner arc outlines
+    rl_DrawCircleSectorLines((Vector2){topLeftCenter.x, topLeftCenter.y}, cornerRadius, 180, 270, segments, color);
+    rl_DrawCircleSectorLines((Vector2){topRightCenter.x, topRightCenter.y}, cornerRadius, 270, 360, segments, color);
+    rl_DrawCircleSectorLines((Vector2){bottomRightCenter.x, bottomRightCenter.y}, cornerRadius, 0, 90, segments, color);
+    rl_DrawCircleSectorLines((Vector2){bottomLeftCenter.x, bottomLeftCenter.y}, cornerRadius, 90, 180, segments, color);
+    
+    // Draw connecting lines between arcs
+    rl_DrawLine(
+        rec.x + cornerRadius, 
+        rec.y, 
+        rec.x + rec.width - cornerRadius, 
+        rec.y, 
+        color
+    );
+    rl_DrawLine(
+        rec.x + rec.width, 
+        rec.y + cornerRadius, 
+        rec.x + rec.width, 
+        rec.y + rec.height - cornerRadius, 
+        color
+    );
+    rl_DrawLine(
+        rec.x + cornerRadius, 
+        rec.y + rec.height, 
+        rec.x + rec.width - cornerRadius, 
+        rec.y + rec.height, 
+        color
+    );
+    rl_DrawLine(
+        rec.x, 
+        rec.y + cornerRadius, 
+        rec.x, 
+        rec.y + rec.height - cornerRadius, 
+        color
+    );
+}
+
+void rl_DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, int lineThick, uint32_t color) {
+    // Ensure roundness is between 0 and 1
+    roundness = roundness > 1.0f ? 1.0f : (roundness < 0.0f ? 0.0f : roundness);
+    
+    // Calculate corner radius based on smallest dimension
+    int cornerRadius = (int)((rec.width < rec.height ? rec.width : rec.height) * roundness * 0.5f);
+    
+    // If roundness is too small, draw a regular rectangle outline
+    if (cornerRadius <= 0) {
+        rl_DrawRectangleLinesEx(rec, lineThick, color);
+        return;
+    }
+    
+    // Center points for each corner
+    Vector2 topLeftCenter = {rec.x + cornerRadius, rec.y + cornerRadius};
+    Vector2 topRightCenter = {rec.x + rec.width - cornerRadius, rec.y + cornerRadius};
+    Vector2 bottomRightCenter = {rec.x + rec.width - cornerRadius, rec.y + rec.height - cornerRadius};
+    Vector2 bottomLeftCenter = {rec.x + cornerRadius, rec.y + rec.height - cornerRadius};
+    
+    // Draw corner arc outlines with thickness
+    for (int i = 0; i < lineThick; i++) {
+        rl_DrawCircleSectorLines(
+            (Vector2){topLeftCenter.x, topLeftCenter.y}, 
+            cornerRadius - i, 180, 270, segments, color
+        );
+        rl_DrawCircleSectorLines(
+            (Vector2){topRightCenter.x, topRightCenter.y}, 
+            cornerRadius - i, 270, 360, segments, color
+        );
+        rl_DrawCircleSectorLines(
+            (Vector2){bottomRightCenter.x, bottomRightCenter.y}, 
+            cornerRadius - i, 0, 90, segments, color
+        );
+        rl_DrawCircleSectorLines(
+            (Vector2){bottomLeftCenter.x, bottomLeftCenter.y}, 
+            cornerRadius - i, 90, 180, segments, color
+        );
+    }
+    
+    // Draw connecting lines with thickness
+    for (int i = 0; i < lineThick; i++) {
+        rl_DrawLineEx(
+            (Vector2){rec.x + cornerRadius, rec.y + i}, 
+            (Vector2){rec.x + rec.width - cornerRadius, rec.y + i}, 
+            1, color
+        );
+        rl_DrawLineEx(
+            (Vector2){rec.x + rec.width - i, rec.y + cornerRadius}, 
+            (Vector2){rec.x + rec.width - i, rec.y + rec.height - cornerRadius}, 
+            1, color
+        );
+        rl_DrawLineEx(
+            (Vector2){rec.x + cornerRadius, rec.y + rec.height - i}, 
+            (Vector2){rec.x + rec.width - cornerRadius, rec.y + rec.height - i}, 
+            1, color
+        );
+        rl_DrawLineEx(
+            (Vector2){rec.x + i, rec.y + cornerRadius}, 
+            (Vector2){rec.x + i, rec.y + rec.height - cornerRadius}, 
+            1, color
+        );
+    }
+}
+
+void rl_DrawRectanglePro(Rectangle rec, Vector2 origin, float rotation, uint32_t color) {
+    if (rotation == 0.0f) {
+        rl_DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
+        return;
+    }
+
+    float radian = rotation * (M_PI / 180.0f);
+    float sinRotation = sinf(radian);
+    float cosRotation = cosf(radian);
+
+    float centerX = rec.x + rec.width / 2.0f;
+    float centerY = rec.y + rec.height / 2.0f;
+
+    Vector2 topLeft, topRight, bottomLeft, bottomRight;
+
+    float dx = -origin.x;
+    float dy = -origin.y;
+
+    topLeft.x = centerX + (dx) * cosRotation - (dy) * sinRotation;
+    topLeft.y = centerY + (dx) * sinRotation + (dy) * cosRotation;
+
+    topRight.x = centerX + (dx + rec.width) * cosRotation - (dy) * sinRotation;
+    topRight.y = centerY + (dx + rec.width) * sinRotation + (dy) * cosRotation;
+
+    bottomLeft.x = centerX + (dx) * cosRotation - (dy + rec.height) * sinRotation;
+    bottomLeft.y = centerY + (dx) * sinRotation + (dy + rec.height) * cosRotation;
+
+    bottomRight.x = centerX + (dx + rec.width) * cosRotation - (dy + rec.height) * sinRotation;
+    bottomRight.y = centerY + (dx + rec.width) * sinRotation + (dy + rec.height) * cosRotation;
+
+    int minX = fminf(fminf(topLeft.x, topRight.x), fminf(bottomLeft.x, bottomRight.x));
+    int maxX = fmaxf(fmaxf(topLeft.x, topRight.x), fmaxf(bottomLeft.x, bottomRight.x));
+    int minY = fminf(fminf(topLeft.y, topRight.y), fminf(bottomLeft.y, bottomRight.y));
+    int maxY = fmaxf(fmaxf(topLeft.y, topRight.y), fmaxf(bottomLeft.y, bottomRight.y));
+
+    for (int py = minY; py <= maxY; py++) {
+        for (int px = minX; px <= maxX; px++) {
+            int inside = 0;
+            Vector2 point = {px, py};
+
+            for (int i = 0, j = 3; i < 4; j = i++) {
+                Vector2 vi = (i == 0) ? topLeft : (i == 1) ? topRight : (i == 2) ? bottomRight : bottomLeft;
+                Vector2 vj = (j == 0) ? topLeft : (j == 1) ? topRight : (j == 2) ? bottomRight : bottomLeft;
+
+                if (((vi.y > point.y) != (vj.y > point.y)) &&
+                    (point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y) + vi.x)) {
+                    inside = !inside;
+                }
+            }
+
+            if (inside) {
+                rl_DrawPixel(px, py, color);
+            }
+        }
+    }
+}
+
 #endif // FENSTERRL_SHAPES_H
+

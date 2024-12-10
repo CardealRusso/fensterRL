@@ -1,6 +1,10 @@
 #ifndef FENSTERRL_WINDOWS_H
 #define FENSTERRL_WINDOWS_H
-#include <windows.h>
+#define WIN32_LEAN_AND_MEAN  // This disables sockets
+
+#define Rectangle Gambiarra_Rectangle
+#include "windows.h"
+#undef Rectangle
 
 typedef struct {
   HWND hwnd;

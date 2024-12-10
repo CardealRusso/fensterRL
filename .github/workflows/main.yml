@@ -35,7 +35,8 @@ jobs:
 
       - name: Run whitenoise and capture screenshot
         run: |
-          ./test/whitenoise &
+          cd test
+          ./whitenoise &
           sleep 5
           screencapture -x /tmp/screenshot.png
         shell: bash
@@ -62,7 +63,8 @@ jobs:
 
       - name: Run whitenoise and capture screenshot
         run: |
-          start ./test/whitenoise
+          cd test
+          start ./whitenoise
           sleep 1
           ffmpeg -f gdigrab -i desktop -frames:v 1 C:\screenshot.png
         shell: bash

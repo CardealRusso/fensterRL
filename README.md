@@ -86,4 +86,19 @@ void rl_DrawRing(Vector2 center, int innerRadius, int outerRadius, int startAngl
 void rl_DrawRingLines(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color)   // Draw ring outline
 void rl_DrawRingIsoTrap(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) // Draw a isosceles trapezoid outline ring
 void rl_DrawRingStriped(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) // Draw a striped outline ring
+
+// Rectangles
+void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color)                                   // Draw a color-filled rectangle
+void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color)                                             // Draw a color-filled rectangle (Vector version)
+void rl_DrawRectangleRec(Rectangle rec, uint32_t color)                                                            // Draw a color-filled rectangle
+void rl_DrawRectanglePro(Rectangle rec, Vector2 origin, float rotation, uint32_t color)                            // Draw a color-filled rectangle with pro parameters
+void rl_DrawRectangleGradientV(int posX, int posY, int width, int height, uint32_t topColor, uint32_t bottomColor) // Draw a vertical-gradient-filled rectangle
+void rl_DrawRectangleGradientH(int posX, int posY, int width, int height, uint32_t leftColor, uint32_t rightColor) // Draw a horizontal-gradient-filled rectangle
+void rl_DrawRectangleGradientEx(Rectangle rec, uint32_t topLeftColor, uint32_t bottomLeftColor,
+                                uint32_t topRightColor, uint32_t bottomRightColor)                                 // Draw a gradient-filled rectangle with custom vertex colors
+void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color)                              // Draw rectangle outline
+void rl_DrawRectangleLinesEx(Rectangle rec, int lineThick, uint32_t color)                                         // Draw rectangle outline with extended parameters
+void rl_DrawRectangleRounded(Rectangle rec, float roundness, int segments, uint32_t color)                         // Draw rectangle with rounded edges
+void rl_DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, uint32_t color)                    // Draw rectangle lines with rounded edges
+void rl_DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, int lineThick, uint32_t color)   // Draw rectangle with rounded edges outline
 ```
