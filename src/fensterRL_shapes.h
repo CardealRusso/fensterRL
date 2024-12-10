@@ -136,7 +136,6 @@ void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngl
                 float angle = atan2(y, x) * 180.0f / M_PI;
                 if (angle < 0) angle += 360;
                 
-                // Verificar se o ângulo está dentro do setor
                 float sweepAngle = endAngle - startAngle;
                 float segmentAngle = sweepAngle / segments;
                 
@@ -182,7 +181,6 @@ void rl_DrawCircleSectorLines(Vector2 center, int radius, int startAngle, int en
 }
 
 uint32_t rl_ColorLerp(uint32_t start, uint32_t end, float t) {
-    // Implementação simplificada de interpolação de cor
     uint8_t r1 = (start >> 16) & 0xFF;
     uint8_t g1 = (start >> 8) & 0xFF;
     uint8_t b1 = start & 0xFF;
@@ -203,7 +201,6 @@ void rl_DrawCircleGradient(int centerX, int centerY, int radius, uint32_t innerC
         for (int x = -radius; x <= radius; x++) {
             int dist = x*x + y*y;
             if (dist <= radius*radius) {
-                // Interpolação linear para o gradiente
                 float t = sqrt((float)dist) / radius;
                 uint32_t color = rl_ColorLerp(innerColor, outerColor, t);
                 rl_DrawPixel(centerX + x, centerY + y, color);
@@ -212,4 +209,121 @@ void rl_DrawCircleGradient(int centerX, int centerY, int radius, uint32_t innerC
     }
 }
 
+void rl_DrawEllipse(int centerX, int centerY, int radiusH, int radiusV, uint32_t color) {
+    for (int y = -radiusV; y <= radiusV; y++) {
+        for (int x = -radiusH; x <= radiusH; x++) {
+            float eqX = (float)x * x / (radiusH * radiusH);
+            float eqY = (float)y * y / (radiusV * radiusV);
+            if (eqX + eqY <= 1.0f) {
+                rl_DrawPixel(centerX + x, centerY + y, color);
+            }
+        }
+    }
+}
+
+void rl_DrawEllipseLines(int centerX, int centerY, int radiusH, int radiusV, uint32_t color) {
+    for (int y = -radiusV; y <= radiusV; y++) {
+        for (int x = -radiusH; x <= radiusH; x++) {
+            float eqX = (float)x * x / (radiusH * radiusH);
+            float eqY = (float)y * y / (radiusV * radiusV);
+            
+            if (fabsf(eqX + eqY - 1.0f) < 0.15f) {
+                rl_DrawPixel(centerX + x, centerY + y, color);
+            }
+        }
+    }
+}
+
+void rl_DrawRing(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+    
+    for (int y = -outerRadius; y <= outerRadius; y++) {
+        for (int x = -outerRadius; x <= outerRadius; x++) {
+            int distSquared = x*x + y*y;
+            
+            if (distSquared <= outerRadius*outerRadius && distSquared >= innerRadius*innerRadius) {
+                float angle = atan2(y, x) * 180.0f / M_PI;
+                if (angle < 0) angle += 360;
+                
+                float sweepAngle = endAngle - startAngle;
+                float segmentAngle = sweepAngle / segments;
+                
+                for (int i = 0; i < segments; i++) {
+                    float segStart = startAngle + i * segmentAngle;
+                    float segEnd = segStart + segmentAngle;
+                    
+                    if (angle >= segStart && angle <= segEnd) {
+                        rl_DrawPixel(center.x + x, center.y + y, color);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void rl_DrawRingLines(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+    
+    for (int y = -outerRadius; y <= outerRadius; y++) {
+        for (int x = -outerRadius; x <= outerRadius; x++) {
+            int distSquared = x*x + y*y;
+            
+            if ((abs(distSquared - outerRadius*outerRadius) < outerRadius) || 
+                (abs(distSquared - innerRadius*innerRadius) < innerRadius)) {
+                float angle = atan2(y, x) * 180.0f / M_PI;
+                if (angle < 0) angle += 360;
+                
+                float sweepAngle = endAngle - startAngle;
+                float segmentAngle = sweepAngle / segments;
+                
+                for (int i = 0; i < segments; i++) {
+                    float segStart = startAngle + i * segmentAngle;
+                    float segEnd = segStart + segmentAngle;
+                    
+                    if (angle >= segStart && angle <= segEnd) {
+                        rl_DrawPixel(center.x + x, center.y + y, color);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void rl_DrawRingIsoTrap(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+
+    float angleStep = (float)(endAngle - startAngle) / segments;
+
+    for (int i = 0; i < segments; i++) {
+        float angleStart = startAngle + i * angleStep;
+        float angleEnd = angleStart + angleStep;
+
+        Vector2 p1 = {center.x + cosf(angleStart * M_PI / 180.0f) * innerRadius, center.y + sinf(angleStart * M_PI / 180.0f) * innerRadius};
+        Vector2 p2 = {center.x + cosf(angleStart * M_PI / 180.0f) * outerRadius, center.y + sinf(angleStart * M_PI / 180.0f) * outerRadius};
+        Vector2 p3 = {center.x + cosf(angleEnd * M_PI / 180.0f) * outerRadius, center.y + sinf(angleEnd * M_PI / 180.0f) * outerRadius};
+        Vector2 p4 = {center.x + cosf(angleEnd * M_PI / 180.0f) * innerRadius, center.y + sinf(angleEnd * M_PI / 180.0f) * innerRadius};
+
+        rl_DrawLineV(p1, p2, color);
+        rl_DrawLineV(p2, p3, color);
+        rl_DrawLineV(p3, p4, color);
+        rl_DrawLineV(p4, p1, color);
+    }
+}
+
+void rl_DrawRingStriped(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) {
+    if (segments < 3) segments = 3;
+
+    float angleStep = (float)(endAngle - startAngle) / segments;
+
+    for (int i = 0; i <= segments; i++) {
+        float angle = startAngle + i * angleStep;
+
+        Vector2 innerPoint = {center.x + cosf(angle * M_PI / 180.0f) * innerRadius, center.y + sinf(angle * M_PI / 180.0f) * innerRadius};
+        Vector2 outerPoint = {center.x + cosf(angle * M_PI / 180.0f) * outerRadius, center.y + sinf(angle * M_PI / 180.0f) * outerRadius};
+
+        rl_DrawLineV(innerPoint, outerPoint, color);
+    }
+}
 #endif // FENSTERRL_SHAPES_H

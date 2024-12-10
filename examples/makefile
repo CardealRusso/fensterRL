@@ -12,16 +12,14 @@ else
 	endif
 endif
 
-all: core_basic_window core_basic_screen_manager core_input_keys
+SRC_DIR = .
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+TARGETS = $(SRCS:%.c=%)
 
-core_basic_window: core_basic_window.c ../src/fensterRL.h
-	$(CC) core_basic_window.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+all: $(TARGETS)
 
-core_basic_screen_manager: core_basic_screen_manager.c ../src/fensterRL.h
-	$(CC) core_basic_screen_manager.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
-
-core_input_keys: core_input_keys.c ../src/fensterRL.h
-	$(CC) core_input_keys.c -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
+%: %.c ../src/fensterRL.h
+	$(CC) $< -I../src/ -o $@ $(CFLAGS) $(LDFLAGS)
 
 clean:
-	rm -f core_basic_window core_basic_screen_manager core_input_keys
+	rm -f $(TARGETS)

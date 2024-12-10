@@ -16,20 +16,25 @@ int main(void) {
     if (rl_IsKeyPressed(28)) {
       printf("enter\n");
     }
-    uint32_t red = 0xFF0000FF;
-    uint32_t green = 0x00FF00FF;
-    uint32_t blue = 0x0000FFFF;
-    uint32_t yellow = 0xFFFF00FF;
+    uint32_t RED = 0xFF0000;
+    uint32_t GREEN = 0x00FF00;
+    uint32_t BLUE = 0x0000FF;
+    uint32_t YELLOW = 0xFFFF00;
 
-    // Posição central
+    // Criando Vector2 manualmente
     Vector2 center = {400, 300};
 
-    // Exemplo 1: Desenhando um setor de círculo (preenchido)
-    // Setor de 90 graus, entre 0 e 90 graus
-    rl_DrawCircleSector(center, 100, 0, 150, 100, red);
+        // Desenhar uma elipse sólida
+        rl_DrawEllipse(200, 200, 100, 50, RED);
 
-    rl_DrawCircleGradient(150, 200, 50, blue, yellow);
+        // Desenhar contorno de elipse
+        rl_DrawEllipseLines(600, 200, 80, 40, GREEN);
 
+        // Desenhar um anel sólido
+        rl_DrawRingIsoTrap(center, 50, 100, 0, 270, 15, BLUE);
+
+        // Desenhar contorno de anel
+        rl_DrawRingLines(center, 120, 150, 0, 180, 8, YELLOW);
     rl_SetWindowTitle("test");
 
     rl_DrawText("test", 0, 0, 32, fonts[0], 0, 0xFFFFFFFF);

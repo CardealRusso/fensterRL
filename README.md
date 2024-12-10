@@ -61,14 +61,14 @@ void rl_DrawPixelV(Vector2 position, uint32_t color)                            
 uint32_t rl_GetPixel(int x, int y)                                                        // Get a pixel color
 uint32_t rl_GetPixelV(Vector2 position)                                                   // Get a pixel color Vector version
 
-//Lines
+// Lines
 void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color)  // Draw a line
 void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color)                       // Draw a line Vector version
 void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)           // Draw a thick line
 void rl_DrawLineStrip(const Vector2 *points, int pointCount, uint32_t color)              // Draw a line sequence
 void rl_DrawLineBezier(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)       // Draw a bezier line using linear interpolation
 
-//Circles
+// Circles
 void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color)                                               // Draw a color-filled circle
 void rl_DrawCircleV(Vector2 center, int radius, uint32_t color)                                                        // Draw a color-filled circle Vector version
 void rl_DrawCircleLines(int centerX, int centerY, int radius, uint32_t color)                                          // Draw circle outline
@@ -76,4 +76,14 @@ void rl_DrawCircleLinesV(Vector2 center, int radius, uint32_t color)            
 void rl_DrawCircleSector(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color)       // Draw a piece of a circle
 void rl_DrawCircleSectorLines(Vector2 center, int radius, int startAngle, int endAngle, int segments, uint32_t color)  // Draw circle sector outline
 void rl_DrawCircleGradient(int centerX, int centerY, int radius, uint32_t innerColor, uint32_t outerColor)             // Draw a gradient-filled circle
+
+// Ellipses
+void rl_DrawEllipse(int centerX, int centerY, int radiusH, int radiusV, uint32_t color)                                // Draw ellipse
+void rl_DrawEllipseLines(int centerX, int centerY, int radiusH, int radiusV, uint32_t color)                           // Draw ellipse outline
+
+// Rings
+void rl_DrawRing(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color)        // Draw ring
+void rl_DrawRingLines(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color)   // Draw ring outline
+void rl_DrawRingIsoTrap(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) // Draw a isosceles trapezoid outline ring
+void rl_DrawRingStriped(Vector2 center, int innerRadius, int outerRadius, int startAngle, int endAngle, int segments, uint32_t color) // Draw a striped outline ring
 ```
