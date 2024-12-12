@@ -18,3 +18,8 @@ static struct {
 typedef struct Vector2 {
   int x, y;
 } Vector2;
+
+typedef struct Rectangle {
+    int x, y;
+    int width, height;
+} Rectangle;

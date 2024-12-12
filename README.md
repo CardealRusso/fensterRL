@@ -23,7 +23,7 @@ int rl_GetScreenWidth(void);                                   // Get current mo
 int rl_GetScreenHeight(void);                                  // Get current monitor height
 
 // Timing-related functions
-void rl_WindowSync(int fps);                                   // The program will sleep to achieve this fps
+void rl_WindowSync(int target_fps);                            // The program will sleep to achieve this fps
 void rl_WaitTime(double seconds);                              // Wait for some time (halt program execution)
 int rl_GetFPS(void);                                           // Get current FPS (Buggy and depends on WindowSync)
 
@@ -48,6 +48,8 @@ const char** rl_GetSystemFonts(void);                          // Returns found 
 void rl_DrawText(const char* text, int posX, int posY, 
                  int fontSize, const char* fontPath, 
                  uint32_t color, uint32_t bgcolor)             // Draw text. Use 0xFFFFFFFF for transparent background
+char* rl_TextFormat(const char* fmt, ...)
+int rl_MeasureText(const char *text, int fontSize, const char* fontPath)
 ```
 
 ```C
@@ -64,4 +66,21 @@ void rl_ClearBackground(uint32_t color);                                        
 
 // Lines
 void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color)             // Draw a line (SIMD-accelerated for horizontal lines)
+void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color)
+void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)
+
+// Rectangles
+void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color)
+void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color)
+void rl_DrawRectangleRec(Rectangle rec, uint32_t color)
+void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color)
+void rl_DrawRectangleLinesEx(Rectangle rec, float lineThick, uint32_t color)
+
+// Circles
+void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color)
+void rl_DrawCircleV(Vector2 center, int radius, uint32_t color)
+
+// Basic shapes collision detection functions
+bool rl_CheckCollisionRecs(Rectangle rec1, Rectangle rec2)
+Rectangle rl_GetCollisionRec(Rectangle rec1, Rectangle rec2)
 ```

@@ -1,5 +1,6 @@
 //Settings
 #define MAX_KEYS 1024
+#define TEXT_FORMAT_BUFFER_SIZE (1024)
 
 //Flags
 #define FLAG_WINDOW_RESIZABLE (1 << 0)
@@ -35,17 +36,20 @@
 //Keys
 #ifdef __linux__
    #define RL_KEY_ESC   1
+   #define RL_KEY_SPACE 57
    #define RL_KEY_LEFT  105
    #define RL_KEY_UP    103
    #define RL_KEY_RIGHT 106
    #define RL_KEY_DOWN  108
 #elif defined(_WIN32)
    #define RL_KEY_ESC   1
+   #define RL_KEY_SPACE 57
    #define RL_KEY_LEFT  75
    #define RL_KEY_UP    72
    #define RL_KEY_RIGHT 77
    #define RL_KEY_DOWN  80
 #elif defined(__APPLE__)
+   #define RL_KEY_SPACE 49
    #define RL_KEY_ESC   53
    #define RL_KEY_LEFT  123
    #define RL_KEY_UP    126

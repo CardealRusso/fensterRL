@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define MAX_FONT_SIZES 16
 #define MAX_CHARS 256
@@ -206,6 +207,37 @@ static CachedGlyph* get_cached_glyph(RLFont* font, unsigned char c, float size) 
     
     font->sizes[size_idx].chars[c] = glyph;
     return glyph;
+}
+
+char* rl_TextFormat(const char* fmt, ...) {
+    static char buffer[TEXT_FORMAT_BUFFER_SIZE];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, TEXT_FORMAT_BUFFER_SIZE, fmt, args);
+    va_end(args);
+    return buffer;
+}
+
+int rl_MeasureText(const char *text, int fontSize, const char* fontPath) {
+    RLFont* font = load_font(fontPath);
+    if (!font) return 0;
+
+    float scale = stbtt_ScaleForPixelHeight(&font->info, fontSize);
+    int total_width = 0;
+    int spaceWidth = fontSize / 3;
+
+    for (const char* p = text; *p; p++) {
+        if (*p == ' ') {
+            total_width += spaceWidth;
+            continue;
+        }
+
+        int advance, lsb;
+        stbtt_GetCodepointHMetrics(&font->info, *p, &advance, &lsb);
+        total_width += advance * scale;
+    }
+
+    return total_width;
 }
 
 void rl_DrawText(const char* text, int posX, int posY, int fontSize, 

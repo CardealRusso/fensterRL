@@ -106,8 +106,8 @@ case WM_MOUSEWHEEL:
       return 0;
 
     case WM_MOUSEMOVE:
-      fenster.mousePosition[0] = HIWORD(lParam);
-      fenster.mousePosition[1] = LOWORD(lParam);
+      fenster.mousePosition[1] = HIWORD(lParam);
+      fenster.mousePosition[0] = LOWORD(lParam);
       return 0;
 
     default:

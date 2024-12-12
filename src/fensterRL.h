@@ -11,6 +11,7 @@
 #include "fensterRL_struct.h"
 
 #ifdef __linux__
+  #define _POSIX_C_SOURCE 200809L
   #include "platforms/fensterRL_Linux.h"
 #elif defined(_WIN32)
   #include "platforms/fensterRL_Windows.h"
@@ -37,23 +38,23 @@ void rl_PollInputEvents(void) {
   PlatformPollInputEvents();
 }
 
-void rl_WindowSync(int fps) {
-  if (fps > 0) {
-    int64_t targetFrameTime = 1000 / fps;
-    int64_t currentTime = PlatformGetTime();
-    int64_t elapsed = currentTime - fenster.lastFrameTime;
+void rl_WindowSync(int target_fps) {
+    static int64_t last_frame_time = 0;
+    int64_t current_time = PlatformGetTime();
+    int64_t target_frame_time = 1000LL / target_fps;
+    int64_t elapsed = current_time - last_frame_time;
 
-    if (elapsed < targetFrameTime) {
-      PlatformSleep(targetFrameTime - elapsed);
-      currentTime = PlatformGetTime();
+    if (elapsed < target_frame_time) {
+        PlatformSleep(target_frame_time - elapsed);
+        current_time = PlatformGetTime();
+        elapsed = current_time - last_frame_time;
     }
 
     if (elapsed > 0) {
-      fenster.fps = 1000 / elapsed;
+        fenster.fps = 1000 / (elapsed > 0 ? elapsed : 1);
     }
 
-    fenster.lastFrameTime = currentTime;
-  }
+    last_frame_time = current_time;
 }
 
 void rl_RenderFrame(void){

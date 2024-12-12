@@ -1,38 +1,14 @@
-/*******************************************************************************************
-*
-*   FensterRL example - Basic window
-*
-*   Example originally created with raylib 1.0, last time updated with fensterRL
-*
-*   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
-*   BSD-like license that allows static linking with closed source software
-*
-*   Copyright (c) 2013-2024 Ramon Santamaria (@raysan5)
-*
-********************************************************************************************/
-
 #include "fensterRL.h"
 
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
-int main(void)
-{
-    // Initialization
-    //--------------------------------------------------------------------------------------
+int main(void) {
     const int screenWidth = 800;
     const int screenHeight = 450;
     const char** fonts = rl_GetSystemFonts();
 
-    rl_InitWindow(screenWidth, screenHeight, "fensterRL example - basic window");
-    //--------------------------------------------------------------------------------------
-
-    // Main game loop
-    while (!rl_IsCloseRequested() && !rl_IsKeyPressed(RL_KEY_ESC))    // Detect window close button and ESC key
-    {
+    rl_InitWindow(screenWidth, screenHeight, "example - basic window");
+    
+    while (!rl_IsCloseRequested() && !rl_IsKeyPressed(RL_KEY_ESC)) {
         rl_PollInputEvents();
-        // Draw
-        //----------------------------------------------------------------------------------
 
         rl_ClearBackground(RL_RAYWHITE);
         if (fonts) {
@@ -40,12 +16,8 @@ int main(void)
         }
         rl_RenderFrame();
         rl_WindowSync(5);
-        //----------------------------------------------------------------------------------
     }
-    // De-Initialization
-    //--------------------------------------------------------------------------------------
-    rl_CloseWindow();        // Close window
-    //--------------------------------------------------------------------------------------
-
+    
+    rl_CloseWindow();
     return 0;
 }

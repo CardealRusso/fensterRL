@@ -1,6 +1,8 @@
 #ifndef FENSTERRL_SHAPES_H
 #define FENSTERRL_SHAPES_H
 
+#include <math.h>
+
 #if defined(USE_SIMD)
     #if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
         #include <immintrin.h>
@@ -59,6 +61,8 @@ static void rl_LinearBufferFill(size_t offset, size_t count, uint32_t color) {
 
 void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color) {
     if (startPosY == endPosY) {
+        if (startPosY < 0 || startPosY >= fenster.height || startPosX >= fenster.width) return;
+
         startPosX = (startPosX < 0) ? 0 : startPosX;
         endPosX = (endPosX >= fenster.width) ? fenster.width - 1 : endPosX;
         
@@ -66,7 +70,6 @@ void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_
         
         size_t offset = startPosY * fenster.width + startPosX;
         size_t count = endPosX - startPosX + 1;
-        
         rl_LinearBufferFill(offset, count, color);
     } else {
         int dx = abs(endPosX - startPosX);
@@ -98,8 +101,85 @@ void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_
     }
 }
 
+void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color) {
+    rl_DrawLine(startPos.x, startPos.y, endPos.x, endPos.y, color);
+}
+
+void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color) {
+    for (int i = 0; i < thick; i++) {
+        rl_DrawLine(startPos.x + i, startPos.y, 
+                    endPos.x + i, endPos.y, color);
+        rl_DrawLine(startPos.x, startPos.y + i, 
+                    endPos.x, endPos.y + i, color);
+    }
+}
+
 void rl_ClearBackground(uint32_t color) {
     const size_t total_pixels = (size_t)fenster.width * fenster.height;
     rl_LinearBufferFill(0, total_pixels, color);
+}
+
+void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color) {
+    for (int y = posY; y < posY + height; y++) {
+        rl_DrawLine(posX, y, posX + width - 1, y, color);
+    }
+}
+
+void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color) {
+    rl_DrawRectangle(position.x, position.y, size.x, size.y, color);
+}
+
+void rl_DrawRectangleRec(Rectangle rec, uint32_t color) {
+    rl_DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
+}
+
+void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color) {
+    rl_DrawLine(posX, posY, posX + width - 1, posY, color);
+    rl_DrawLine(posX, posY + height - 1, posX + width - 1, posY + height - 1, color);
+    rl_DrawLine(posX, posY, posX, posY + height - 1, color);
+    rl_DrawLine(posX + width - 1, posY, posX + width - 1, posY + height - 1, color);
+}
+
+void rl_DrawRectangleLinesEx(Rectangle rec, float lineThick, uint32_t color) {
+    rl_DrawLineEx((Vector2){rec.x, rec.y}, (Vector2){rec.x + rec.width - 1, rec.y}, lineThick, color);
+    rl_DrawLineEx((Vector2){rec.x, rec.y + rec.height - 1}, (Vector2){rec.x + rec.width - 1, rec.y + rec.height - 1}, lineThick, color);
+    rl_DrawLineEx((Vector2){rec.x, rec.y}, (Vector2){rec.x, rec.y + rec.height - 1}, lineThick, color);
+    rl_DrawLineEx((Vector2){rec.x + rec.width - 1, rec.y}, (Vector2){rec.x + rec.width - 1, rec.y + rec.height - 1}, lineThick, color);
+}
+
+void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color) {
+    for (int y = -radius; y <= radius; y++) {
+        int width = sqrt(radius * radius - y * y);
+        rl_DrawLine(centerX - width, centerY + y, centerX + width, centerY + y, color);
+    }
+}
+
+void rl_DrawCircleV(Vector2 center, int radius, uint32_t color) {
+    rl_DrawCircle(center.x, center.y, radius, color);
+}
+
+bool rl_CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
+    return (rec1.x < rec2.x + rec2.width &&
+            rec1.x + rec1.width > rec2.x &&
+            rec1.y < rec2.y + rec2.height &&
+            rec1.y + rec1.height > rec2.y);
+}
+
+Rectangle rl_GetCollisionRec(Rectangle rec1, Rectangle rec2) {
+    float left = fmaxf(rec1.x, rec2.x);
+    float top = fmaxf(rec1.y, rec2.y);
+    float right = fminf(rec1.x + rec1.width, rec2.x + rec2.width);
+    float bottom = fminf(rec1.y + rec1.height, rec2.y + rec2.height);
+
+    if (right > left && bottom > top) {
+        return (Rectangle){
+            left,
+            top,
+            right - left,
+            bottom - top
+        };
+    }
+
+    return (Rectangle){ 0, 0, 0, 0 };
 }
 #endif // FENSTERRL_SHAPES_H
