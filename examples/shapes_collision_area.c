@@ -47,7 +47,7 @@ int main(void) {
         if (collision) {
             rl_DrawRectangleRec(boxCollision, RL_LIME);
             
-            rl_DrawText("COLLISION!", rl_GetWindowWidth()/2 - rl_MeasureText("COLLISION!", 20, fonts[0]), screenUpperLimit/2, 20, fonts[0], RL_BLACK, 0xFFFFFFFF);
+            rl_DrawText("COLLISION!", rl_GetWindowWidth()/2 - rl_MeasureTextWidth("COLLISION!", 20, fonts[0]), screenUpperLimit/2, 20, fonts[0], RL_BLACK, 0xFFFFFFFF);
 
             rl_DrawText(rl_TextFormat("Collision Area: %i", (int)boxCollision.width*(int)boxCollision.height), rl_GetWindowWidth()/2 - 100, screenUpperLimit + 10, 20, fonts[0], RL_BLACK, 0xFFFFFFFF);
         }

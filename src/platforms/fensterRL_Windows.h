@@ -6,11 +6,7 @@
 #include "windows.h"
 #undef Rectangle
 
-typedef struct {
-  HWND hwnd;
-  HBITMAP bitmap;
-  BITMAPINFO bitmapInfo;
-} PlatformData;
+static HWND g_hwnd;
 
 static WINDOWPLACEMENT g_wpPrev = { 
     sizeof(WINDOWPLACEMENT), // length
@@ -128,12 +124,9 @@ static void PlatformInitWindow(const char* title) {
   
   RegisterClassEx(&wc);
 
-  PlatformData* platform = malloc(sizeof(PlatformData));
-  fenster.platformData = platform;
-
   DWORD windowStyle = fenster.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME);
 
-  platform->hwnd = CreateWindowEx(
+  g_hwnd = CreateWindowEx(
     WS_EX_CLIENTEDGE, 
     "FensterRLClass", 
     title,
@@ -152,15 +145,15 @@ static void PlatformInitWindow(const char* title) {
   fenster.screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
   RECT rect;
-  GetWindowRect(platform->hwnd, &rect);
+  GetWindowRect(g_hwnd, &rect);
   fenster.windowPosX = rect.left;
   fenster.windowPosY = rect.top;
 
-  fenster.isFocused = (GetForegroundWindow() == platform->hwnd);
+  fenster.isFocused = (GetForegroundWindow() == g_hwnd);
 
-  SetWindowLongPtr(platform->hwnd, GWLP_USERDATA, (LONG_PTR)&fenster);
-  ShowWindow(platform->hwnd, SW_SHOW);
-  UpdateWindow(platform->hwnd);
+  SetWindowLongPtr(g_hwnd, GWLP_USERDATA, (LONG_PTR)&fenster);
+  ShowWindow(g_hwnd, SW_SHOW);
+  UpdateWindow(g_hwnd);
 }
 
 static void PlatformPollInputEvents(void) {
@@ -178,35 +171,56 @@ static void PlatformPollInputEvents(void) {
   }
 }
 
+static void RenderBitmap(Rectangle rect) {
+    int x0 = rect.x < 0 ? 0 : rect.x;
+    int y0 = rect.y < 0 ? 0 : rect.y;
+    int x1 = rect.x + rect.width > fenster.width ? fenster.width : rect.x + rect.width;
+    int y1 = rect.y + rect.height > fenster.height ? fenster.height : rect.y + rect.height;
+    int width = x1 - x0;
+    int height = y1 - y0;
+    
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    HDC hdc = GetDC(g_hwnd);
+    BITMAPINFO bi = {0};
+    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bi.bmiHeader.biWidth = fenster.width;
+    bi.bmiHeader.biHeight = -fenster.height;
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+
+    int sourceY = fenster.height - (rect.y + rect.height);
+
+    StretchDIBits(
+        hdc,                   // Destination device context
+        rect.x, rect.y,        // Destination x, y
+        rect.width, rect.height, // Destination width, height
+        rect.x, sourceY,       // Ajustado: Source x, y
+        rect.width, rect.height, // Source width, height
+        fenster.buffer,        // Source buffer
+        &bi,                   // Bitmap info
+        DIB_RGB_COLORS,        // Usage
+        SRCCOPY                // Raster operation
+    );
+
+    ReleaseDC(g_hwnd, hdc);
+}
+
+
 static void PlatformRenderFrame(void) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-  HDC hdc = GetDC(platform->hwnd);
+  Rectangle fullRect = {0, 0, fenster.width, fenster.height};
+  RenderBitmap(fullRect);
+}
 
-  BITMAPINFO bi = {0};
-  bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-  bi.bmiHeader.biWidth = fenster.width;
-  bi.bmiHeader.biHeight = -fenster.height;
-  bi.bmiHeader.biPlanes = 1;
-  bi.bmiHeader.biBitCount = 32;
-  bi.bmiHeader.biCompression = BI_RGB;
-
-  SetDIBitsToDevice(hdc, 
-    0, 0, fenster.width, fenster.height, 
-    0, 0, 
-    0, fenster.height, 
-    fenster.buffer, &bi, DIB_RGB_COLORS);
-
-  ReleaseDC(platform->hwnd, hdc);
+static void PlatformRenderFrameRec(Rectangle rect) {
+  RenderBitmap(rect);
 }
 
 static void PlatformCloseWindow(void) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-
-  DeleteObject(platform->bitmap);
-  DestroyWindow(platform->hwnd);
-
-  free(platform);
-  fenster.platformData = NULL;
+  DestroyWindow(g_hwnd);
 }
 
 static void PlatformSleep(int64_t microseconds) {
@@ -221,47 +235,42 @@ static int64_t PlatformGetTime(void) {
 }
 
 static void PlatformSetWindowTitle(const char* title) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-  SetWindowText(platform->hwnd, title);
+  SetWindowText(g_hwnd, title);
 }
 
 static void PlatformSetWindowPosition(int x, int y) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-  SetWindowPos(platform->hwnd, HWND_TOP, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+  SetWindowPos(g_hwnd, HWND_TOP, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 }
 
 static void PlatformSetWindowSize(int width, int height) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-  SetWindowPos(platform->hwnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
+  SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 static void PlatformSetWindowFocused(void) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
-  SetForegroundWindow(platform->hwnd);
+  SetForegroundWindow(g_hwnd);
 }
 
 static void PlatformToggleFullscreen(void) {
-  PlatformData* platform = (PlatformData*)fenster.platformData;
   fenster.isFullScreen = !fenster.isFullScreen;
 
-  DWORD dwStyle = GetWindowLong(platform->hwnd, GWL_STYLE);
+  DWORD dwStyle = GetWindowLong(g_hwnd, GWL_STYLE);
 
   if (fenster.isFullScreen) {
-    GetWindowPlacement(platform->hwnd, &g_wpPrev);
-    SetWindowLong(platform->hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+    GetWindowPlacement(g_hwnd, &g_wpPrev);
+    SetWindowLong(g_hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
 
     MONITORINFO mi = { sizeof(MONITORINFO) };
-    GetMonitorInfo(MonitorFromWindow(platform->hwnd, MONITOR_DEFAULTTOPRIMARY), &mi);
+    GetMonitorInfo(MonitorFromWindow(g_hwnd, MONITOR_DEFAULTTOPRIMARY), &mi);
 
-    SetWindowPos(platform->hwnd, HWND_TOP, 
+    SetWindowPos(g_hwnd, HWND_TOP, 
       mi.rcMonitor.left, mi.rcMonitor.top,
       mi.rcMonitor.right - mi.rcMonitor.left,
       mi.rcMonitor.bottom - mi.rcMonitor.top,
       SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
   } else {
-    SetWindowLong(platform->hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-    SetWindowPlacement(platform->hwnd, &g_wpPrev);
-    SetWindowPos(platform->hwnd, NULL, 0, 0, 0, 0, 
+    SetWindowLong(g_hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+    SetWindowPlacement(g_hwnd, &g_wpPrev);
+    SetWindowPos(g_hwnd, NULL, 0, 0, 0, 0, 
       SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | 
       SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
   }

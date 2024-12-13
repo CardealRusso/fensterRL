@@ -43,17 +43,20 @@ printf("ok\n");
         .width = 150,
         .height = 150
     };
-    rl_DrawRectangleRec(thick_rect, RED);
+    //rl_DrawRectangleRec(thick_rect, RED);
     if (rl_CheckCollisionRecs(yellowrect, thick_rect)) {
       Rectangle boxCollision = rl_GetCollisionRec(yellowrect, thick_rect);
       rl_DrawRectangleRec(boxCollision, WHITE);
     }
     // Desenha círculos
+    rl_DrawCircle(5, 5, 15, GREEN);
+    rl_DrawRectangle(5, 550, 5, 5, GREEN);
     rl_DrawCircle(200, 200, 100, YELLOW);
     rl_DrawCircle(600, 200, 50, RED);
 
-    rl_RenderFrame();
-
+    //rl_RenderFrame();
+		rl_RenderFrameRec(thick_rect);
+		rl_RenderFrameRec(yellowrect);
     if (rl_IsWindowFocused()) {
       rl_WindowSync(60);
     } else {

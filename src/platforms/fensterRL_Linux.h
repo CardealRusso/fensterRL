@@ -217,6 +217,29 @@ void PlatformRenderFrame(void) {
     XFlush(platform->display);
 }
 
+void PlatformRenderFrameRec(Rectangle rect) {
+    PlatformData* platform = (PlatformData*)fenster.platformData;
+
+    if (rect.x < 0) rect.x = 0;
+    if (rect.y < 0) rect.y = 0;
+    if (rect.x + rect.width > fenster.width) rect.width = fenster.width - rect.x;
+    if (rect.y + rect.height > fenster.height) rect.height = fenster.height - rect.y;
+
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    XPutImage(
+        platform->display,      // Connection to the X server
+        platform->window,       // Target window
+        platform->gc,           // Graphics context
+        platform->image,        // Source image
+        rect.x, rect.y,         // Coordinates in the source image
+        rect.x, rect.y,         // Coordinates in the target window
+        rect.width, rect.height // Area dimensions
+    );
+
+    XFlush(platform->display);
+}
+
 static void PlatformSetWindowTitle(const char* title) {
     PlatformData* platform = (PlatformData*)fenster.platformData;
     if (platform && platform->display && platform->window) {

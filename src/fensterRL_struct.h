@@ -20,6 +20,6 @@ typedef struct Vector2 {
 } Vector2;
 
 typedef struct Rectangle {
-    int x, y;
-    int width, height;
+  int x, y;
+  int width, height;
 } Rectangle;

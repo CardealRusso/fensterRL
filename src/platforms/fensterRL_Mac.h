@@ -19,6 +19,8 @@
 extern id const NSDefaultRunLoopMode;
 extern id const NSApp;
 
+static Rectangle g_renderRegion = {0, 0, 0, 0};
+
 typedef struct {
     id wnd;  // Window object
 } PlatformData;
@@ -111,18 +113,52 @@ static void WindowDidResize(id self, SEL cmd, id notification) {
 
 static void DrawRect(id self, SEL cmd, CGRect r) {
     (void)r, (void)cmd, (void)self;
+    
     CGContextRef context = msg(CGContextRef, msg(id, cls("NSGraphicsContext"), "currentContext"), "graphicsPort");
+    
     CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+
+    size_t bufferWidth = fenster.width;
+    size_t bufferHeight = fenster.height;
+    
     CGDataProviderRef provider = CGDataProviderCreateWithData(
-        NULL, fenster.buffer, fenster.width * fenster.height * 4, NULL);
-    CGImageRef img = CGImageCreate(
-        fenster.width, fenster.height, 8, 32, fenster.width * 4, space,
+        NULL, 
+        fenster.buffer, 
+        bufferWidth * bufferHeight * 4, 
+        NULL
+    );
+
+    CGImageRef fullImage = CGImageCreate(
+        bufferWidth, bufferHeight, 
+        8, 32, 
+        bufferWidth * 4, 
+        space,
         kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
-        provider, NULL, false, kCGRenderingIntentDefault);
+        provider, NULL, false, kCGRenderingIntentDefault
+    );
+
     CGColorSpaceRelease(space);
     CGDataProviderRelease(provider);
-    CGContextDrawImage(context, CGRectMake(0, 0, fenster.width, fenster.height), img);
-    CGImageRelease(img);
+
+    CGContextSaveGState(context);
+    
+    CGContextClipToRect(context, 
+        CGRectMake(
+            g_renderRegion.x, 
+            bufferHeight - (g_renderRegion.y + g_renderRegion.height), 
+            g_renderRegion.width, 
+            g_renderRegion.height
+        )
+    );
+
+    CGContextDrawImage(context, 
+        CGRectMake(0, 0, bufferWidth, bufferHeight), 
+        fullImage
+    );
+
+    CGContextRestoreGState(context);
+    
+    CGImageRelease(fullImage);
 }
 
 static void PlatformPollInputEvents(void) {
@@ -205,7 +241,9 @@ static int64_t PlatformGetTime(void) {
     return time.tv_sec * 1000 + (time.tv_nsec / 1000000);
 }
 
-void PlatformRenderFrame(void) {
+static void PlatformRenderFrame_Internal(Rectangle rect) {
+    g_renderRegion = rect;
+
     PlatformData* platform = fenster.platformData;
     if (platform && platform->wnd) {
         id contentView = msg(id, platform->wnd, "contentView");
@@ -213,6 +251,24 @@ void PlatformRenderFrame(void) {
         msg(void, contentView, "display");
     }
 }
+
+
+void PlatformRenderFrame(void) {
+   Rectangle fullRect = {0, 0, fenster.width, fenster.height};
+   PlatformRenderFrame_Internal(fullRect);
+}
+
+void PlatformRenderFrameRec(Rectangle rect) {
+    if (rect.x < 0) rect.x = 0;
+    if (rect.y < 0) rect.y = 0;
+    if (rect.x + rect.width > fenster.width) rect.width = fenster.width - rect.x;
+    if (rect.y + rect.height > fenster.height) rect.height = fenster.height - rect.y;
+    
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    PlatformRenderFrame_Internal(rect);
+}
+
 static void PlatformCloseWindow(void) {
     PlatformData* platform = fenster.platformData;
     if (platform) {

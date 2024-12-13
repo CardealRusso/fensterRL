@@ -218,7 +218,7 @@ char* rl_TextFormat(const char* fmt, ...) {
     return buffer;
 }
 
-int rl_MeasureText(const char *text, int fontSize, const char* fontPath) {
+int rl_MeasureTextWidth(const char *text, int fontSize, const char* fontPath) {
     RLFont* font = load_font(fontPath);
     if (!font) return 0;
 
@@ -238,6 +238,27 @@ int rl_MeasureText(const char *text, int fontSize, const char* fontPath) {
     }
 
     return total_width;
+}
+
+int rl_MeasureTextHeight(const char *text, int fontSize, const char* fontPath) {
+    RLFont* font = load_font(fontPath);
+    if (!font) return 0;
+    
+    float scale = stbtt_ScaleForPixelHeight(&font->info, fontSize);
+    int max_height = 0;
+    
+    for (const char* p = text; *p; p++) {
+        int ascent, descent, lineGap;
+        stbtt_GetCodepointBox(&font->info, *p, NULL, NULL, NULL, NULL);
+        stbtt_GetFontVMetrics(&font->info, &ascent, &descent, &lineGap);
+        
+        int char_height = (int)((ascent - descent) * scale);
+        if (char_height > max_height) {
+            max_height = char_height;
+        }
+    }
+    
+    return max_height;
 }
 
 void rl_DrawText(const char* text, int posX, int posY, int fontSize, 

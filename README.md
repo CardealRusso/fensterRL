@@ -3,7 +3,6 @@
 void rl_InitWindow(int width, int height, const char* title);  // Initialize window
 void rl_CloseWindow(void);                                     // Close window
 void rl_PollInputEvents(void);                                 // Register all input events
-void rl_RenderFrame(void);                                     // Render the frame
 void rl_SetWindowTitle(const char* title);                     // Set title for window
 void rl_SetWindowPosition(int x, int y);                       // Set window position on screen
 void rl_SetWindowPositionV(Vector2 position)                   // Set window position on screen with Vector2
@@ -21,6 +20,10 @@ int rl_GetWindowWidth(void);                                   // Get current wi
 int rl_GetWindowHeight(void);                                  // Get current window height
 int rl_GetScreenWidth(void);                                   // Get current monitor width
 int rl_GetScreenHeight(void);                                  // Get current monitor height
+
+// Frame rendering
+void rl_RenderFrame(void);                                     // Draws the buffer in the window
+void rl_RenderFrameRec(Rectangle rect);                        // Draws only a rectangular buffer area
 
 // Timing-related functions
 void rl_WindowSync(int target_fps);                            // The program will sleep to achieve this fps
@@ -44,21 +47,23 @@ bool rl_IsKeyDown(int key);                                    // Check if a key
 
 ```C
 // -DUSE_FONTS (needs -lm)
-const char** rl_GetSystemFonts(void);                          // Returns found system fonts (ttf)
+const char** rl_GetSystemFonts(void);                                          // Returns found system fonts (ttf)
 void rl_DrawText(const char* text, int posX, int posY, 
                  int fontSize, const char* fontPath, 
-                 uint32_t color, uint32_t bgcolor)             // Draw text. Use 0xFFFFFFFF for transparent background
+                 uint32_t color, uint32_t bgcolor)                             // Draw text. Use 0xFFFFFFFF for transparent background
 char* rl_TextFormat(const char* fmt, ...)
-int rl_MeasureText(const char *text, int fontSize, const char* fontPath)
+int rl_MeasureTextWidth(const char *text, int fontSize, const char* fontPath)  // Measure string width
+int rl_MeasureTextHeight(const char *text, int fontSize, const char* fontPath) // Measure string Height
+char* rl_TextFormat(const char* fmt, ...)                                      // Text formatting with variables (sprintf() style)
 ```
 
 ```C
-// -DUSE_SHAPES
+// -DUSE_SHAPES (needs -lm)
 // Optional: -DUSE_SIMD (needs -mavx2 (x86), neon for arm)
 
 // Pixels
 void rl_DrawPixel(int posX, int posY, uint32_t color)                                                // Draw a pixel
-void rl_DrawPixelV(Vector2 position, uint32_t color)                                                 // Draw a pixel Vector version
+void rl_DrawPixelV(Vector2 position, uint32_t color)                                                 // Draw a pixel (Vector version)
 
 // Drawing-related functions
 void rl_LinearBufferFill(size_t offset, size_t count, uint32_t color)                                // Unsafe linear color fill (SIMD-accelerated, uses memset for color 0)
@@ -66,21 +71,21 @@ void rl_ClearBackground(uint32_t color);                                        
 
 // Lines
 void rl_DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, uint32_t color)             // Draw a line (SIMD-accelerated for horizontal lines)
-void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color)
-void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)
+void rl_DrawLineV(Vector2 startPos, Vector2 endPos, uint32_t color)                                  // Draw a line (Vector version)
+void rl_DrawLineEx(Vector2 startPos, Vector2 endPos, int thick, uint32_t color)                      // Draw a thick line
 
 // Rectangles
-void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color)
-void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color)
-void rl_DrawRectangleRec(Rectangle rec, uint32_t color)
-void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color)
-void rl_DrawRectangleLinesEx(Rectangle rec, float lineThick, uint32_t color)
+void rl_DrawRectangle(int posX, int posY, int width, int height, uint32_t color)                     // Draw a color-filled rectangle (SIMD-accelerated)
+void rl_DrawRectangleV(Vector2 position, Vector2 size, uint32_t color)                               // Draw a color-filled rectangle (Vector version)
+void rl_DrawRectangleRec(Rectangle rec, uint32_t color)                                              // Draw a color-filled rectangle
+void rl_DrawRectangleLines(int posX, int posY, int width, int height, uint32_t color)                // Draw rectangle outline (Half SIMD-accelerated)
+void rl_DrawRectangleLinesEx(Rectangle rec, float lineThick, uint32_t color)                         // Draw rectangle outline with extended parameters
 
 // Circles
-void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color)
-void rl_DrawCircleV(Vector2 center, int radius, uint32_t color)
+void rl_DrawCircle(int centerX, int centerY, int radius, uint32_t color)                             // Draw a color-filled circle (SIMD-accelerated)
+void rl_DrawCircleV(Vector2 center, int radius, uint32_t color)                                      // Draw a color-filled circle (Vector version)
 
 // Basic shapes collision detection functions
-bool rl_CheckCollisionRecs(Rectangle rec1, Rectangle rec2)
-Rectangle rl_GetCollisionRec(Rectangle rec1, Rectangle rec2)
+bool rl_CheckCollisionRecs(Rectangle rec1, Rectangle rec2)                                           // Check collision between two rectangles
+Rectangle rl_GetCollisionRec(Rectangle rec1, Rectangle rec2)                                         // Get collision rectangle for two rectangles collision
 ```

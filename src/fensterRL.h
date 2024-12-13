@@ -61,6 +61,10 @@ void rl_RenderFrame(void){
   PlatformRenderFrame();
 }
 
+void rl_RenderFrameRec(Rectangle rect){
+  PlatformRenderFrameRec(rect);
+}
+
 void rl_CloseWindow(void) {
   PlatformCloseWindow();
   free(fenster.buffer);
