@@ -1,62 +1,42 @@
 #include "fensterRL.h"
-#include <stdio.h>
 
+//SIMD is not ignoring transparencies (0xFFFFFFFF) so we disabled simd for this example
 int main(void) {
-  rl_InitWindow(800, 600, "White Noise Example");
-printf("ok\n");
+  rl_InitWindow(800, 450, "White Noise Example");
+  Image* background = rl_LoadImage("cyberpunk_street_background.png");
+  Image* midground = rl_LoadImage("cyberpunk_street_midground.png");
+  Image* foreground = rl_LoadImage("cyberpunk_street_foreground.png");
+  
+  float scrollingBack = 0.0f;
+  float scrollingMid = 0.0f;
+  float scrollingFore = 0.0f;
+  
   while (true) {
     rl_PollInputEvents();
     rl_ClearBackground(RL_RAYWHITE);
     if (rl_IsCloseRequested() || rl_IsKeyPressed(1)) {
       break;
     }
-#define WHITE 0xFFFFFF
-#define RED   0xFF0000
-#define GREEN 0x00FF00
-#define BLUE  0x0000FF
-#define YELLOW 0xFFFF00
-#define PURPLE 0xFF00FF
 
-    // Desenha uma linha simples
-    Vector2 start = {100, 100};
-    Vector2 end = {700, 200};
-    rl_DrawLineV(start, end, BLUE);
+    scrollingBack -= 0.1f;
+    scrollingMid -= 0.5f;
+    scrollingFore -= 1.0f;
 
-    // Desenha uma linha grossa
-    Vector2 thick_start = {100, 250};
-    Vector2 thick_end = {700, 350};
-    rl_DrawLineEx(thick_start, thick_end, 10, RED);
+    if (scrollingBack <= -background->width*2) scrollingBack = 0;
+    if (scrollingMid <= -midground->width*2) scrollingMid = 0;
+    if (scrollingFore <= -foreground->width*2) scrollingFore = 0;
+        
+    rl_DrawImageEx(background, (Vector2){ scrollingBack, 20 }, 0.0f, 2.0f);
+    rl_DrawImageEx(background, (Vector2){ background->width*2 + scrollingBack, 20 }, 0.0f, 2.0f);
 
-    // Desenha retângulos
-    rl_DrawRectangle(400, 350, 200, 150, GREEN);
+    rl_DrawImageEx(midground, (Vector2){ scrollingMid, 20 }, 0.0f, 2.0f);
+    rl_DrawImageEx(midground, (Vector2){ midground->width*2 + scrollingMid, 20 }, 0.0f, 2.0f);
 
-    Rectangle yellowrect = {
-        .x = 200,
-        .y = 500,
-        .width = 150,
-        .height = 100
-    };
-    rl_DrawRectangleRec(yellowrect, YELLOW);
-    Rectangle thick_rect = {
-        .x = rl_GetMouseX(),
-        .y = rl_GetMouseY(),
-        .width = 150,
-        .height = 150
-    };
-    //rl_DrawRectangleRec(thick_rect, RED);
-    if (rl_CheckCollisionRecs(yellowrect, thick_rect)) {
-      Rectangle boxCollision = rl_GetCollisionRec(yellowrect, thick_rect);
-      rl_DrawRectangleRec(boxCollision, WHITE);
-    }
-    // Desenha círculos
-    rl_DrawCircle(5, 5, 15, GREEN);
-    rl_DrawRectangle(5, 550, 5, 5, GREEN);
-    rl_DrawCircle(200, 200, 100, YELLOW);
-    rl_DrawCircle(600, 200, 50, RED);
+    rl_DrawImageEx(foreground, (Vector2){ scrollingFore, 70 }, 0.0f, 2.0f);
+    rl_DrawImageEx(foreground, (Vector2){ foreground->width*2 + scrollingFore, 70 }, 0.0f, 2.0f);
 
-    //rl_RenderFrame();
-		rl_RenderFrameRec(thick_rect);
-		rl_RenderFrameRec(yellowrect);
+    
+		rl_RenderFrame();
     if (rl_IsWindowFocused()) {
       rl_WindowSync(60);
     } else {

@@ -19,7 +19,16 @@ typedef struct Vector2 {
   int x, y;
 } Vector2;
 
+typedef struct Size2 {
+  int width, height;
+} Size2;
+
 typedef struct Rectangle {
   int x, y;
   int width, height;
 } Rectangle;
+
+typedef struct Image {
+  uint32_t* pixels;
+  int width, height;
+} Image;

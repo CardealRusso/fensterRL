@@ -186,4 +186,8 @@ bool rl_IsKeyPressed(int keycode) {
 #include "fensterRL_fonts.h"
 #endif
 
+#ifdef USE_IMAGES
+#include "fensterRL_images.h"
+#endif
+
 #endif // FENSTERRL_H

@@ -15,8 +15,10 @@ int main(void) {
     int screenUpperLimit = 40;
     bool pause = false;
     bool collision = false;
-
+    
+    
     while (!rl_IsCloseRequested() && !rl_IsKeyPressed(RL_KEY_ESC)) {
+        
         rl_PollInputEvents();
         
         if (!pause) boxA.x += boxASpeedX;

@@ -6,6 +6,7 @@
 #define FLAG_WINDOW_RESIZABLE (1 << 0)
 
 //Colors
+#define FAKE_TRANS    0xFFFFFFFF // Simulate transparency. These pixels will not be drawn
 #define RL_LIGHTGRAY  0xc8c8c8  // Light Gray
 #define RL_GRAY       0x828282  // Gray
 #define RL_DARKGRAY   0x505050  // Dark Gray

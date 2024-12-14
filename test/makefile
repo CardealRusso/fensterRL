@@ -1,4 +1,4 @@
-CFLAGS ?= -DUSE_FONTS -DUSE_SHAPES -DUSE_SIMD -march=native -mtune=native -fno-strict-aliasing -funroll-loops -Ofast -ftree-vectorize -funsafe-math-optimizations -mavx2 -lm -s -flto -Wall -Wextra -std=gnu99
+CFLAGS ?= -DUSE_IMAGES -DUSE_FONTS -DUSE_SHAPES -march=native -mtune=native -fno-strict-aliasing -funroll-loops -Ofast -ftree-vectorize -funsafe-math-optimizations -lm -s -flto -Wall -Wextra -std=gnu99
 
 ifeq ($(OS),Windows_NT)
 	CC = gcc
